@@ -186,7 +186,7 @@ func lookupSubset(set []triplet) matrix {
 						if diagonals > 0 {
 							fmt.Println("Square ", candidate.String(), "has", diagonals, "diagonals")
 							//return candidate
-							if diagonals > 1 {
+							if diagonals > 1 { //TODO make testable
 								return candidate
 							}
 						}

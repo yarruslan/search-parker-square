@@ -9,10 +9,10 @@ func Test_lookupSubset(t *testing.T) { //[97, 82, 74](21609) [94, 113, 2](21609)
 	type args struct {
 		set []triplet
 	}
-	set200 := make(map[int][]triplet)
-	set200, _ = generate(set200, []int{}, 2, 200)
-	set510 := make(map[int][]triplet)
-	set510, _ = generate(set510, []int{}, 97*4, 510)
+	set200 := make(map[sumSquares][]triplet)
+	set200, _, _ = generate(set200, []sumSquares{}, 21609, 21609)
+	set510 := make(map[sumSquares][]triplet)
+	set510, _, _ = generate(set510, []sumSquares{}, 21609*16, 21609*16)
 	tests := []struct {
 		name string
 		args args
