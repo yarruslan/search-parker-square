@@ -9,10 +9,12 @@ func Test_lookupSubset(t *testing.T) { //[97, 82, 74](21609) [94, 113, 2](21609)
 	type args struct {
 		set []triplet
 	}
-	set200 := make(map[sumSquares][]triplet)
-	set200, _, _ = generate(set200, []sumSquares{}, 21609, 21609)
-	set510 := make(map[sumSquares][]triplet)
-	set510, _, _ = generate(set510, []sumSquares{}, 21609*16, 21609*16)
+	set1 := make(map[sumSquares][]triplet)
+	set1, _, _ = generate(set1, []sumSquares{}, 21609, 21609)
+	setx16 := make(map[sumSquares][]triplet)
+	setx16, _, _ = generate(setx16, []sumSquares{}, 21609*16, 21609*16)
+	setx144 := make(map[sumSquares][]triplet)
+	setx144, _, _ = generate(setx144, []sumSquares{}, 21609*144, 21609*144)
 	tests := []struct {
 		name string
 		args args
@@ -20,7 +22,7 @@ func Test_lookupSubset(t *testing.T) { //[97, 82, 74](21609) [94, 113, 2](21609)
 	}{
 		{"base",
 			args{
-				set200[21609],
+				set1[21609],
 			},
 			matrix{
 				triplet{97 * 97, 82 * 82, 74 * 74}, triplet{94 * 94, 113 * 113, 2 * 2}, triplet{58 * 58, 46 * 46, 127 * 127},
@@ -28,17 +30,31 @@ func Test_lookupSubset(t *testing.T) { //[97, 82, 74](21609) [94, 113, 2](21609)
 		},
 		{"base x4",
 			args{
-				set510[21609*16],
+				setx16[21609*16],
 			},
 			matrix{
 				triplet{97 * 97 * 16, 82 * 82 * 16, 74 * 74 * 16}, triplet{94 * 94 * 16, 113 * 113 * 16, 2 * 2 * 16}, triplet{58 * 58 * 16, 46 * 46 * 16, 127 * 127 * 16},
 			},
 		},
-		// TODO: Add test cases.
+		{"base x12",
+			args{
+				setx144[21609*144],
+			},
+			matrix{
+				triplet{97 * 97 * 144, 82 * 82 * 144, 74 * 74 * 144}, triplet{94 * 94 * 144, 113 * 113 * 144, 2 * 2 * 144}, triplet{58 * 58 * 144, 46 * 46 * 144, 127 * 127 * 144},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := lookupSubset(tt.args.set); !reflect.DeepEqual(got, tt.want) {
+			var got matrix
+			for _, sq := range lookupSubset(tt.args.set) {
+				if countDiagonals(sq) > 0 { //TODO refactor, no single resp atm
+					got = sq
+					break
+				}
+			}
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("lookupSubset() = %v, want %v", got, tt.want)
 			}
 		})

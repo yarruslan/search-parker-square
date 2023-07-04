@@ -32,7 +32,7 @@ const progressStep sumSquares = 100000
 //const memoryTarget int = 10000 //TODO target amount of triplets in memory
 
 func main() {
-
+	//TODO refactor for better test coverage
 	tasklist = make(chan sumSquares)
 	mapLock := make(chan struct{}, threads)
 	var index []sumSquares
@@ -42,9 +42,15 @@ func main() {
 	worker := func() {
 		for task := range tasklist {
 			mapLock <- struct{}{}
-			square := lookupSubset(groupedTriplets[task])
-			if (square != matrix{}) {
-				fmt.Println("Winner square: ", square.String())
+			squares := lookupSubset(groupedTriplets[task])
+			for _, sq := range squares {
+				diagonals := countDiagonals(sq)
+				if diagonals > 0 {
+					fmt.Println("Square ", sq.String(), "has", diagonals, "diagonals")
+				}
+				if diagonals > 1 {
+					fmt.Println("Winner square: ", sq.String())
+				}
 			}
 			<-mapLock
 		}
@@ -133,10 +139,10 @@ func generate(groups map[sumSquares][]triplet, index []sumSquares, windowLow, wi
 }
 
 // go through slice of equal squares and find match
-func lookupSubset(set []triplet) matrix {
+func lookupSubset(set []triplet) []matrix {
 	lenght := len(set)
 	if lenght < 7 { //broader search, including 1 diagonal
-		return matrix{}
+		return []matrix{}
 	}
 
 	//heuristic shortcut - 9 numbers repeat at least 2 times, and 4 of them at least 3 times
@@ -156,9 +162,10 @@ func lookupSubset(set []triplet) matrix {
 		}
 	}
 	if stat2 < 9 || stat3 < 4 {
-		return matrix{}
+		return []matrix{}
 	}
 
+	var result []matrix
 	for i := 0; i < lenght-2; i++ {
 		if keysStat[set[i].s1] < 2 || keysStat[set[i].s2] < 2 || keysStat[set[i].s3] < 2 {
 			continue //heuristic - skip triplet that does not have a cross
@@ -181,16 +188,7 @@ func lookupSubset(set []triplet) matrix {
 				if (candidate != matrix{}) {
 					candidate := checkCandidate2(candidate)
 					if (candidate != matrix{}) {
-
-						diagonals := countDiagonals(candidate)
-						if diagonals > 0 {
-							fmt.Println("Square ", candidate.String(), "has", diagonals, "diagonals")
-							//return candidate
-							if diagonals > 1 { //TODO make testable
-								return candidate
-							}
-						}
-
+						result = append(result, candidate)
 					}
 				}
 
@@ -199,7 +197,7 @@ func lookupSubset(set []triplet) matrix {
 		}
 	}
 
-	return matrix{}
+	return result
 }
 
 func noOverlap2(a, b triplet) bool {
