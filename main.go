@@ -21,71 +21,28 @@ type matrix struct {
 }
 type sumSquares int
 
-var tasklist chan sumSquares
-
 const threads = 11
 
-const max int = 5000 //greatest number to put to square of squares
+// const max int = 5000 //greatest number to put to square of squares
 const startSearch sumSquares = 0
+const endSearch sumSquares = 150000
 const progressStep sumSquares = 100000
 
 //const memoryTarget int = 10000 //TODO target amount of triplets in memory
 
 func main() {
 	//TODO refactor for better test coverage
-	tasklist = make(chan sumSquares)
-	mapLock := make(chan struct{}, threads)
-	var index []sumSquares
-	groupedTriplets := make(map[sumSquares][]triplet)
-
-	groupedTriplets, index, completeSum := generate(groupedTriplets, index, startSearch, startSearch+progressStep)
-	worker := func() {
-		for task := range tasklist {
-			mapLock <- struct{}{}
-			squares := lookupSubset(groupedTriplets[task])
-			for _, sq := range squares {
-				diagonals := countDiagonals(sq)
-				if diagonals > 0 {
-					fmt.Println("Square ", sq.String(), "has", diagonals, "diagonals")
-				}
-				if diagonals > 1 {
-					fmt.Println("Winner square: ", sq.String())
-				}
+	//separate IO and init from core
+	resultChan := make(chan []fmt.Stringer)
+	go func() {
+		for res := range resultChan {
+			for _, sq := range res {
+				fmt.Println("Square ", sq, " has 1 diagonals")
 			}
-			<-mapLock
 		}
-	}
-	for i := 0; i < threads; i++ {
-		go worker()
-	}
-	var progress = startSearch
-	for step := 0; progress < sumSquares(max*max*3); step++ {
-		sum := index[step]
-		if sum > completeSum {
-			panic("Missing generated values for " + fmt.Sprint(sum))
-		} //Should not happen
-		if sum == completeSum {
-			log.Println("Processing sum: ", sum, " Timestamp: ", time.Now())
-			//wait till all workers finish task
-			for i := 0; i < threads; i++ {
-				mapLock <- struct{}{}
-			}
-			for i := progress; i < sum; i++ {
-				//free processed
-				delete(groupedTriplets, i)
-			}
-			//generate more
-			groupedTriplets, index, completeSum = generate(groupedTriplets, index, completeSum, completeSum+progressStep)
-			log.Println("Generated next portion up to:", completeSum)
-			//release lock
-			for i := 0; i < threads; i++ {
-				<-mapLock
-			}
+	}()
+	findSquaresWithDiagonals(startSearch, endSearch, 1, resultChan)
 
-		}
-		progress = sum
-		tasklist <- sum
-	}
 }
 
 func generate(groups map[sumSquares][]triplet, index []sumSquares, windowLow, windowHigh sumSquares) (map[sumSquares][]triplet, []sumSquares, sumSquares) {
@@ -314,7 +271,7 @@ func (t *triplet) String() string {
 	return "{" + fmt.Sprint(math.Sqrt(float64(t.s1))) + ", " + fmt.Sprint(math.Sqrt(float64(t.s2))) + ", " + fmt.Sprint(math.Sqrt(float64(t.s3))) + "}"
 }
 
-func (m *matrix) String() string {
+func (m matrix) String() string {
 	return m.a.String() + m.b.String() + m.c.String() + "(" + fmt.Sprint(m.a.s1+m.a.s2+m.a.s3) + ")"
 }
 
@@ -341,4 +298,66 @@ func countDiagonals(x matrix) int {
 	}
 
 	return nrDiagonals
+}
+
+func findSquaresWithDiagonals(start, end sumSquares, d int, res chan []fmt.Stringer) {
+	tasklist := make(chan sumSquares)
+	mapLock := make(chan struct{}, threads)
+	var index []sumSquares
+	groupedTriplets := make(map[sumSquares][]triplet)
+	groupedTriplets, index, completeSum := generate(groupedTriplets, index, start, start+progressStep)
+	worker := func() {
+		for task := range tasklist {
+			var ret []fmt.Stringer
+			mapLock <- struct{}{}
+			squares := lookupSubset(groupedTriplets[task])
+			for _, sq := range squares {
+				diagonals := countDiagonals(sq)
+				if diagonals >= d {
+					ret = append(ret, sq)
+				}
+			}
+
+			<-mapLock
+			if len(ret) > 0 {
+				res <- ret
+			}
+		}
+	}
+	for i := 0; i < threads; i++ {
+		go worker()
+	}
+	var progress = start
+	for step := 0; progress < end; step++ { //TODO fix end condition. should be exact target
+		sum := index[step]
+		if sum > completeSum {
+			panic("Missing generated values for " + fmt.Sprint(sum))
+		} //Should not happen
+		if sum == completeSum {
+			log.Println("Processing sum: ", sum, " Timestamp: ", time.Now())
+			//wait till all workers finish task
+			for i := 0; i < threads; i++ {
+				mapLock <- struct{}{}
+			}
+			for i := progress; i < sum; i++ {
+				//free processed
+				delete(groupedTriplets, i)
+			}
+			//generate more
+			groupedTriplets, index, completeSum = generate(groupedTriplets, index, completeSum, completeSum+progressStep)
+			log.Println("Generated next portion up to:", completeSum)
+			//release lock
+			for i := 0; i < threads; i++ {
+				<-mapLock
+			}
+
+		}
+		progress = sum
+		tasklist <- sum
+	}
+	//at the end wait for completion and close
+	for i := 0; i < threads; i++ {
+		<-mapLock
+	}
+	close(res)
 }
