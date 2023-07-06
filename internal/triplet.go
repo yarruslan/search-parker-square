@@ -15,8 +15,16 @@ type Triplet struct {
 type IndexedTriplets map[SumSquares][]Triplet
 type SumSquares int
 
+func (t *Triplet) getRoot() (ret [3]int) {
+	//ret = make([]int, 3)
+	ret[0] = int(math.Sqrt(float64(t.S1)))
+	ret[1] = int(math.Sqrt(float64(t.S2)))
+	ret[2] = int(math.Sqrt(float64(t.S3)))
+	return
+}
+
 func (t *Triplet) String() string {
-	return "{" + fmt.Sprint(math.Sqrt(float64(t.S1))) + ", " + fmt.Sprint(math.Sqrt(float64(t.S2))) + ", " + fmt.Sprint(math.Sqrt(float64(t.S3))) + "}"
+	return fmt.Sprint(t.getRoot()) // "{" + fmt.Sprint(math.Sqrt(float64(t.S1))) + ", " + fmt.Sprint(math.Sqrt(float64(t.S2))) + ", " + fmt.Sprint(math.Sqrt(float64(t.S3))) + "}"
 }
 
 func Generate(groups IndexedTriplets, index []SumSquares, windowLow, windowHigh SumSquares) (IndexedTriplets, []SumSquares, SumSquares) {

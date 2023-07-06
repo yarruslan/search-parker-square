@@ -70,8 +70,6 @@ func TestGenerate(t *testing.T) {
 			},
 			wantEnd: 13,
 		},
-
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -84,6 +82,111 @@ func TestGenerate(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotEnd, tt.wantEnd) {
 				t.Errorf("Generate() got2 = %v, want %v", gotEnd, tt.wantEnd)
+			}
+		})
+	}
+}
+
+func TestGenerateCheckCount(t *testing.T) {
+	type args struct {
+		groups     IndexedTriplets
+		index      []SumSquares
+		windowLow  SumSquares
+		windowHigh SumSquares
+	}
+	tests := []struct {
+		name     string
+		args     args
+		countMap map[SumSquares]int
+	}{
+		{
+			name: "Test minimal",
+			args: args{
+				groups:     IndexedTriplets{},
+				index:      []SumSquares{},
+				windowLow:  0,
+				windowHigh: 5,
+			},
+			countMap: map[SumSquares]int{
+				5: 1,
+			},
+		},
+		{
+			name: "Test more",
+			args: args{
+				groups:     IndexedTriplets{},
+				index:      []SumSquares{},
+				windowLow:  0,
+				windowHigh: 13,
+			},
+			countMap: map[SumSquares]int{
+				5:  1,
+				10: 1,
+				13: 1,
+			},
+		},
+
+		{
+			name: "Test at 1st square",
+			args: args{
+				groups:     IndexedTriplets{},
+				index:      []SumSquares{},
+				windowLow:  21609,
+				windowHigh: 21609,
+			},
+			countMap: map[SumSquares]int{
+				21609: 40,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotMap, _, _ := Generate(tt.args.groups, tt.args.index, tt.args.windowLow, tt.args.windowHigh)
+			for k, v := range gotMap {
+				if len(v) != tt.countMap[k] {
+					t.Errorf("Generate() got = %v: %v, want %v: %v", k, len(v), k, tt.countMap[k])
+				}
+			}
+			for k, v := range tt.countMap {
+				if len(gotMap[k]) != v {
+					t.Errorf("Generate() got = %v: %v, want %v: %v", k, len(gotMap[k]), k, v)
+				}
+			}
+
+			/*if !reflect.DeepEqual(gotMap, tt.wantMap) {
+				t.Errorf("Generate() got = %v, want %v", gotMap, tt.wantMap)
+			}
+			if !reflect.DeepEqual(gotSlice, tt.wantSlice) {
+				t.Errorf("Generate() got1 = %v, want %v", gotSlice, tt.wantSlice)
+			}
+			if !reflect.DeepEqual(gotEnd, tt.wantEnd) {
+				t.Errorf("Generate() got2 = %v, want %v", gotEnd, tt.wantEnd)
+			}*/
+		})
+	}
+}
+
+func TestTriplet_String(t *testing.T) {
+	tests := []struct {
+		name string
+		tr   *Triplet
+		want string
+	}{
+		{
+			name: "Empty",
+			tr:   &Triplet{},
+			want: "[0 0 0]",
+		},
+		{
+			name: "Not empty",
+			tr:   &Triplet{1, 4, 9},
+			want: "[1 2 3]",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.tr.String(); got != tt.want {
+				t.Errorf("Triplet.String() = %v, want %v", got, tt.want)
 			}
 		})
 	}
