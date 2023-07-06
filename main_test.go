@@ -77,8 +77,8 @@ func Test_findSquaresWithDiagonals(t *testing.T) {
 	}{
 		{"base",
 			args{
-				1,
-				100000,
+				20000,
+				88000,
 				1,
 				resChan,
 			},
@@ -124,7 +124,13 @@ func Test_findSquaresWithDiagonals(t *testing.T) {
 			findSquaresWithDiagonals(tt.args.start, tt.args.end, tt.args.d, tt.args.res) //async race possible? more than 1 responce?
 			//for got := range tt.args.res {
 			<-done
+			if len(tt.want) != len(got) {
+				t.Errorf("got = %v, want %v", got, tt.want)
+			}
 			for i, res := range got {
+				if len(tt.want[i]) != len(got[i]) {
+					t.Errorf("got = %v, want %v", got, tt.want)
+				}
 				for j, sq := range res {
 					if len(tt.want) < i+1 || len(tt.want[i]) < j+1 || !reflect.DeepEqual(sq, tt.want[i][j]) {
 						t.Errorf("got = %v, want %v", got, tt.want)

@@ -21,7 +21,7 @@ type matrix struct {
 }
 type sumSquares int
 
-const threads = 11
+const threads = 5
 
 // const max int = 5000 //greatest number to put to square of squares
 const startSearch sumSquares = 0
@@ -357,7 +357,7 @@ func findSquaresWithDiagonals(start, end sumSquares, d int, res chan []fmt.Strin
 	}
 	//at the end wait for completion and close
 	for i := 0; i < threads; i++ {
-		<-mapLock
+		mapLock <- struct{}{}
 	}
 	close(res)
 }
