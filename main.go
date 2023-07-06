@@ -3,30 +3,25 @@ package main
 import (
 	"fmt"
 	"log"
-	"math"
-	"sort"
 	"time"
+
+	triplet "github.com/yarruslan/search-parker-square/internal"
 )
 
-type triplet struct {
-	s1 int
-	s2 int
-	s3 int
-	//sum int
-}
 type matrix struct {
-	a triplet
-	b triplet
-	c triplet
+	a triplet.Triplet
+	b triplet.Triplet
+	c triplet.Triplet
 }
-type sumSquares int
 
-const threads = 5
+//type sumSquares triplet.SumSquares
+
+const threads = 11
 
 // const max int = 5000 //greatest number to put to square of squares
-const startSearch sumSquares = 0
-const endSearch sumSquares = 150000
-const progressStep sumSquares = 100000
+const startSearch triplet.SumSquares = 0
+const endSearch triplet.SumSquares = 150000
+const progressStep triplet.SumSquares = 100000
 
 //const memoryTarget int = 10000 //TODO target amount of triplets in memory
 
@@ -45,58 +40,8 @@ func main() {
 
 }
 
-func generate(groups map[sumSquares][]triplet, index []sumSquares, windowLow, windowHigh sumSquares) (map[sumSquares][]triplet, []sumSquares, sumSquares) {
-
-	count := 0
-	start := int(math.Floor(math.Sqrt(float64(windowLow) / 3)))
-	stop := int(math.Ceil(math.Sqrt(float64(windowHigh))))
-	for i := start; i < stop; i++ {
-		//stop uncenessary cycles early
-		for j := 1; j < i; j++ {
-			if sumSquares(i*i+j*j) > windowHigh {
-				break
-			}
-			if !(sumSquares(i*i+2*j*j) < windowLow) {
-				for k := 0; k < j; k++ {
-					sum := sumSquares(i*i + j*j + k*k)
-					if sum > windowHigh {
-						break
-					}
-					if sum >= windowLow {
-						groups[sum] = append(groups[sum], triplet{i * i, j * j, k * k})
-						count++
-					}
-				}
-			}
-		}
-	}
-
-	exist := make(map[sumSquares]bool)
-	for _, v := range index {
-		exist[v] = true
-	}
-	for k, _ := range groups {
-		//avoid duplicates
-		if !exist[k] {
-			index = append(index, k)
-		}
-	}
-	sort.Slice(index, func(i, j int) bool {
-		return index[i] < index[j]
-	})
-	var maxValueInWindow sumSquares
-	for _, v := range index {
-		if v > windowHigh {
-			break
-		}
-		maxValueInWindow = v
-	}
-
-	return groups, index, maxValueInWindow
-}
-
 // go through slice of equal squares and find match
-func lookupSubset(set []triplet) []matrix {
+func lookupSubset(set []triplet.Triplet) []matrix {
 	lenght := len(set)
 	if lenght < 7 { //broader search, including 1 diagonal
 		return []matrix{}
@@ -105,9 +50,9 @@ func lookupSubset(set []triplet) []matrix {
 	//heuristic shortcut - 9 numbers repeat at least 2 times, and 4 of them at least 3 times
 	keysStat := make(map[int]int)
 	for _, v := range set {
-		keysStat[v.s1]++
-		keysStat[v.s2]++
-		keysStat[v.s3]++
+		keysStat[v.S1]++
+		keysStat[v.S2]++
+		keysStat[v.S3]++
 	}
 	var stat2, stat3 int
 	for _, v := range keysStat {
@@ -124,18 +69,18 @@ func lookupSubset(set []triplet) []matrix {
 
 	var result []matrix
 	for i := 0; i < lenght-2; i++ {
-		if keysStat[set[i].s1] < 2 || keysStat[set[i].s2] < 2 || keysStat[set[i].s3] < 2 {
+		if keysStat[set[i].S1] < 2 || keysStat[set[i].S2] < 2 || keysStat[set[i].S3] < 2 {
 			continue //heuristic - skip triplet that does not have a cross
 		}
 		for j := i + 1; j < lenght-1; j++ {
-			if keysStat[set[i].s1] < 2 || keysStat[set[i].s2] < 2 || keysStat[set[i].s3] < 2 {
+			if keysStat[set[i].S1] < 2 || keysStat[set[i].S2] < 2 || keysStat[set[i].S3] < 2 {
 				continue
 			}
 			if !noOverlap2(set[i], set[j]) {
 				continue
 			}
 			for k := j + 1; k < lenght; k++ {
-				if keysStat[set[i].s1] < 2 || keysStat[set[i].s2] < 2 || keysStat[set[i].s3] < 2 {
+				if keysStat[set[i].S1] < 2 || keysStat[set[i].S2] < 2 || keysStat[set[i].S3] < 2 {
 					continue
 				}
 				if !noOverlap3(set[i], set[j], set[k]) {
@@ -157,20 +102,20 @@ func lookupSubset(set []triplet) []matrix {
 	return result
 }
 
-func noOverlap2(a, b triplet) bool {
-	if a.s1 == b.s1 || a.s1 == b.s2 || a.s1 == b.s3 ||
-		a.s2 == b.s1 || a.s2 == b.s2 || a.s2 == b.s3 ||
-		a.s3 == b.s1 || a.s3 == b.s2 || a.s3 == b.s3 {
+func noOverlap2(a, b triplet.Triplet) bool {
+	if a.S1 == b.S1 || a.S1 == b.S2 || a.S1 == b.S3 ||
+		a.S2 == b.S1 || a.S2 == b.S2 || a.S2 == b.S3 ||
+		a.S3 == b.S1 || a.S3 == b.S2 || a.S3 == b.S3 {
 		return false
 	}
 	return true
 }
 
-func noOverlap3(a, b, c triplet) bool {
+func noOverlap3(a, b, c triplet.Triplet) bool {
 	//dumb comparison is faster
-	/*	values := []int{a.s1, a.s2, a.s3,
-			b.s1, b.s2, b.s3,
-			c.s1, c.s2, c.s3}
+	/*	values := []int{a.S1, a.S2, a.S3,
+			b.S1, b.S2, b.S3,
+			c.S1, c.S2, c.S3}
 		duplicate := make(map[int]bool)
 		for _, v := range values {
 			_, exist := duplicate[v]
@@ -181,15 +126,15 @@ func noOverlap3(a, b, c triplet) bool {
 		}
 		return true
 	*/
-	if /*a.s1 == b.s1 || a.s1 == b.s2 || a.s1 == b.s3 ||
-	a.s2 == b.s1 || a.s2 == b.s2 || a.s2 == b.s3 ||
-	a.s3 == b.s1 || a.s3 == b.s2 || a.s3 == b.s3 ||*/ //a & b were compared earlier
-	a.s1 == c.s1 || a.s1 == c.s2 || a.s1 == c.s3 ||
-		a.s2 == c.s1 || a.s2 == c.s2 || a.s2 == c.s3 ||
-		a.s3 == c.s1 || a.s3 == c.s2 || a.s3 == c.s3 ||
-		b.s1 == c.s1 || b.s1 == c.s2 || b.s1 == c.s3 ||
-		b.s2 == c.s1 || b.s2 == c.s2 || b.s2 == c.s3 ||
-		b.s3 == c.s1 || b.s3 == c.s2 || b.s3 == c.s3 {
+	if /*a.S1 == b.S1 || a.S1 == b.S2 || a.S1 == b.S3 ||
+	a.S2 == b.S1 || a.S2 == b.S2 || a.S2 == b.S3 ||
+	a.S3 == b.S1 || a.S3 == b.S2 || a.S3 == b.S3 ||*/ //a & b were compared earlier
+	a.S1 == c.S1 || a.S1 == c.S2 || a.S1 == c.S3 ||
+		a.S2 == c.S1 || a.S2 == c.S2 || a.S2 == c.S3 ||
+		a.S3 == c.S1 || a.S3 == c.S2 || a.S3 == c.S3 ||
+		b.S1 == c.S1 || b.S1 == c.S2 || b.S1 == c.S3 ||
+		b.S2 == c.S1 || b.S2 == c.S2 || b.S2 == c.S3 ||
+		b.S3 == c.S1 || b.S3 == c.S2 || b.S3 == c.S3 {
 		return false
 	}
 	return true
@@ -197,44 +142,44 @@ func noOverlap3(a, b, c triplet) bool {
 
 // true if has 1 vertical match
 func checkCandidate1(x matrix) matrix {
-	sum := x.a.s1 + x.a.s2 + x.a.s3
-	if x.a.s1+x.b.s1+x.c.s1 == sum {
+	sum := x.a.S1 + x.a.S2 + x.a.S3
+	if x.a.S1+x.b.S1+x.c.S1 == sum {
 		return x
 	}
-	if x.a.s1+x.b.s1+x.c.s2 == sum {
-		x.c.s1, x.c.s2 = x.c.s2, x.c.s1
+	if x.a.S1+x.b.S1+x.c.S2 == sum {
+		x.c.S1, x.c.S2 = x.c.S2, x.c.S1
 		return x
 	}
-	if x.a.s1+x.b.s1+x.c.s3 == sum {
-		x.c.s1, x.c.s3 = x.c.s3, x.c.s1
+	if x.a.S1+x.b.S1+x.c.S3 == sum {
+		x.c.S1, x.c.S3 = x.c.S3, x.c.S1
 		return x
 	}
-	if x.a.s1+x.b.s2+x.c.s1 == sum {
-		x.b.s1, x.b.s2 = x.b.s2, x.b.s1
+	if x.a.S1+x.b.S2+x.c.S1 == sum {
+		x.b.S1, x.b.S2 = x.b.S2, x.b.S1
 		return x
 	}
-	if x.a.s1+x.b.s2+x.c.s2 == sum {
-		x.b.s1, x.b.s2 = x.b.s2, x.b.s1
-		x.c.s1, x.c.s2 = x.c.s2, x.c.s1
+	if x.a.S1+x.b.S2+x.c.S2 == sum {
+		x.b.S1, x.b.S2 = x.b.S2, x.b.S1
+		x.c.S1, x.c.S2 = x.c.S2, x.c.S1
 		return x
 	}
-	if x.a.s1+x.b.s2+x.c.s3 == sum {
-		x.b.s1, x.b.s2 = x.b.s2, x.b.s1
-		x.c.s1, x.c.s3 = x.c.s3, x.c.s1
+	if x.a.S1+x.b.S2+x.c.S3 == sum {
+		x.b.S1, x.b.S2 = x.b.S2, x.b.S1
+		x.c.S1, x.c.S3 = x.c.S3, x.c.S1
 		return x
 	}
-	if x.a.s1+x.b.s3+x.c.s1 == sum {
-		x.b.s1, x.b.s3 = x.b.s3, x.b.s1
+	if x.a.S1+x.b.S3+x.c.S1 == sum {
+		x.b.S1, x.b.S3 = x.b.S3, x.b.S1
 		return x
 	}
-	if x.a.s1+x.b.s3+x.c.s2 == sum {
-		x.b.s1, x.b.s3 = x.b.s3, x.b.s1
-		x.c.s1, x.c.s2 = x.c.s2, x.c.s1
+	if x.a.S1+x.b.S3+x.c.S2 == sum {
+		x.b.S1, x.b.S3 = x.b.S3, x.b.S1
+		x.c.S1, x.c.S2 = x.c.S2, x.c.S1
 		return x
 	}
-	if x.a.s1+x.b.s3+x.c.s3 == sum {
-		x.b.s1, x.b.s3 = x.b.s3, x.b.s1
-		x.c.s1, x.c.s3 = x.c.s3, x.c.s1
+	if x.a.S1+x.b.S3+x.c.S3 == sum {
+		x.b.S1, x.b.S3 = x.b.S3, x.b.S1
+		x.c.S1, x.c.S3 = x.c.S3, x.c.S1
 		return x
 	}
 	return matrix{}
@@ -242,21 +187,21 @@ func checkCandidate1(x matrix) matrix {
 
 // true if has 2 vertical match
 func checkCandidate2(x matrix) matrix {
-	sum := x.a.s1 + x.a.s2 + x.a.s3
-	if x.a.s2+x.b.s2+x.c.s2 == sum {
+	sum := x.a.S1 + x.a.S2 + x.a.S3
+	if x.a.S2+x.b.S2+x.c.S2 == sum {
 		return x
 	}
-	if x.a.s2+x.b.s2+x.c.s3 == sum {
-		x.c.s2, x.c.s3 = x.c.s3, x.c.s2
+	if x.a.S2+x.b.S2+x.c.S3 == sum {
+		x.c.S2, x.c.S3 = x.c.S3, x.c.S2
 		return x
 	}
-	if x.a.s2+x.b.s3+x.c.s2 == sum {
-		x.b.s2, x.b.s3 = x.b.s3, x.b.s2
+	if x.a.S2+x.b.S3+x.c.S2 == sum {
+		x.b.S2, x.b.S3 = x.b.S3, x.b.S2
 		return x
 	}
-	if x.a.s2+x.b.s3+x.c.s3 == sum {
-		x.c.s2, x.c.s3 = x.c.s3, x.c.s2
-		x.b.s2, x.b.s3 = x.b.s3, x.b.s2
+	if x.a.S2+x.b.S3+x.c.S3 == sum {
+		x.c.S2, x.c.S3 = x.c.S3, x.c.S2
+		x.b.S2, x.b.S3 = x.b.S3, x.b.S2
 		return x
 	}
 	return matrix{}
@@ -267,45 +212,41 @@ func sumSquare(a, b, c int) sumSquares {
 	return a*a + b*b + c*c
 }*/
 
-func (t *triplet) String() string {
-	return "{" + fmt.Sprint(math.Sqrt(float64(t.s1))) + ", " + fmt.Sprint(math.Sqrt(float64(t.s2))) + ", " + fmt.Sprint(math.Sqrt(float64(t.s3))) + "}"
-}
-
 func (m matrix) String() string {
-	return m.a.String() + m.b.String() + m.c.String() + "(" + fmt.Sprint(m.a.s1+m.a.s2+m.a.s3) + ")"
+	return m.a.String() + m.b.String() + m.c.String() + "(" + fmt.Sprint(m.a.S1+m.a.S2+m.a.S3) + ")"
 }
 
 func countDiagonals(x matrix) int {
-	sum := x.a.s1 + x.a.s2 + x.a.s3
+	sum := x.a.S1 + x.a.S2 + x.a.S3
 	nrDiagonals := 0
-	if x.a.s1+x.b.s2+x.c.s3 == sum {
+	if x.a.S1+x.b.S2+x.c.S3 == sum {
 		nrDiagonals++
 	}
-	if x.a.s2+x.b.s3+x.c.s1 == sum {
+	if x.a.S2+x.b.S3+x.c.S1 == sum {
 		nrDiagonals++
 	}
-	if x.a.s3+x.b.s1+x.c.s2 == sum {
+	if x.a.S3+x.b.S1+x.c.S2 == sum {
 		nrDiagonals++
 	}
-	if x.a.s3+x.b.s2+x.c.s1 == sum {
+	if x.a.S3+x.b.S2+x.c.S1 == sum {
 		nrDiagonals++
 	}
-	if x.a.s2+x.b.s1+x.c.s3 == sum {
+	if x.a.S2+x.b.S1+x.c.S3 == sum {
 		nrDiagonals++
 	}
-	if x.a.s1+x.b.s3+x.c.s2 == sum {
+	if x.a.S1+x.b.S3+x.c.S2 == sum {
 		nrDiagonals++
 	}
 
 	return nrDiagonals
 }
 
-func findSquaresWithDiagonals(start, end sumSquares, d int, res chan []fmt.Stringer) {
-	tasklist := make(chan sumSquares)
+func findSquaresWithDiagonals(start, end triplet.SumSquares, d int, res chan []fmt.Stringer) {
+	tasklist := make(chan triplet.SumSquares)
 	mapLock := make(chan struct{}, threads)
-	var index []sumSquares
-	groupedTriplets := make(map[sumSquares][]triplet)
-	groupedTriplets, index, completeSum := generate(groupedTriplets, index, start, start+progressStep)
+	var index []triplet.SumSquares
+	groupedTriplets := make(triplet.IndexedTriplets)
+	groupedTriplets, index, completeSum := triplet.Generate(groupedTriplets, index, start, start+progressStep)
 	worker := func() {
 		for task := range tasklist {
 			var ret []fmt.Stringer
@@ -344,7 +285,7 @@ func findSquaresWithDiagonals(start, end sumSquares, d int, res chan []fmt.Strin
 				delete(groupedTriplets, i)
 			}
 			//generate more
-			groupedTriplets, index, completeSum = generate(groupedTriplets, index, completeSum, completeSum+progressStep)
+			groupedTriplets, index, completeSum = triplet.Generate(groupedTriplets, index, completeSum, completeSum+progressStep)
 			log.Println("Generated next portion up to:", completeSum)
 			//release lock
 			for i := 0; i < threads; i++ {
