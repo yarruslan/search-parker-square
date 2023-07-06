@@ -76,3 +76,41 @@ func Generate(groups IndexedTriplets, index []SumSquares, windowLow, windowHigh 
 
 	return groups, index, maxValueInWindow
 }
+
+func NoOverlap2(a, b Triplet) bool {
+	if a.S1 == b.S1 || a.S1 == b.S2 || a.S1 == b.S3 ||
+		a.S2 == b.S1 || a.S2 == b.S2 || a.S2 == b.S3 ||
+		a.S3 == b.S1 || a.S3 == b.S2 || a.S3 == b.S3 {
+		return false
+	}
+	return true
+}
+
+func NoOverlap3(a, b, c Triplet) bool {
+	//dumb comparison is faster
+	/*	values := []int{a.S1, a.S2, a.S3,
+			b.S1, b.S2, b.S3,
+			c.S1, c.S2, c.S3}
+		duplicate := make(map[int]bool)
+		for _, v := range values {
+			_, exist := duplicate[v]
+			if exist {
+				return false
+			}
+			duplicate[v] = true
+		}
+		return true
+	*/
+	if /*a.S1 == b.S1 || a.S1 == b.S2 || a.S1 == b.S3 ||
+	a.S2 == b.S1 || a.S2 == b.S2 || a.S2 == b.S3 ||
+	a.S3 == b.S1 || a.S3 == b.S2 || a.S3 == b.S3 ||*/ //a & b were compared earlier
+	a.S1 == c.S1 || a.S1 == c.S2 || a.S1 == c.S3 ||
+		a.S2 == c.S1 || a.S2 == c.S2 || a.S2 == c.S3 ||
+		a.S3 == c.S1 || a.S3 == c.S2 || a.S3 == c.S3 ||
+		b.S1 == c.S1 || b.S1 == c.S2 || b.S1 == c.S3 ||
+		b.S2 == c.S1 || b.S2 == c.S2 || b.S2 == c.S3 ||
+		b.S3 == c.S1 || b.S3 == c.S2 || b.S3 == c.S3 {
+		return false
+	}
+	return true
+}

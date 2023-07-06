@@ -5,7 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	triplet "github.com/yarruslan/search-parker-square/internal"
+	"github.com/yarruslan/search-parker-square/internal/matrix"
+	triplet "github.com/yarruslan/search-parker-square/internal/triplet"
 )
 
 func Test_lookupSubset(t *testing.T) { //[97, 82, 74](21609) [94, 113, 2](21609) [58, 46, 127](21609) 1
@@ -21,13 +22,13 @@ func Test_lookupSubset(t *testing.T) { //[97, 82, 74](21609) [94, 113, 2](21609)
 	tests := []struct {
 		name string
 		args args
-		want matrix
+		want matrix.Matrix
 	}{
 		{"base",
 			args{
 				set1[21609],
 			},
-			matrix{
+			matrix.Matrix{
 				triplet.Triplet{97 * 97, 82 * 82, 74 * 74}, triplet.Triplet{94 * 94, 113 * 113, 2 * 2}, triplet.Triplet{58 * 58, 46 * 46, 127 * 127},
 			},
 		},
@@ -35,7 +36,7 @@ func Test_lookupSubset(t *testing.T) { //[97, 82, 74](21609) [94, 113, 2](21609)
 			args{
 				setx16[21609*16],
 			},
-			matrix{
+			matrix.Matrix{
 				triplet.Triplet{97 * 97 * 16, 82 * 82 * 16, 74 * 74 * 16}, triplet.Triplet{94 * 94 * 16, 113 * 113 * 16, 2 * 2 * 16}, triplet.Triplet{58 * 58 * 16, 46 * 46 * 16, 127 * 127 * 16},
 			},
 		},
@@ -43,16 +44,16 @@ func Test_lookupSubset(t *testing.T) { //[97, 82, 74](21609) [94, 113, 2](21609)
 			args{
 				setx225[21609*225],
 			},
-			matrix{
+			matrix.Matrix{
 				triplet.Triplet{97 * 97 * 225, 82 * 82 * 225, 74 * 74 * 225}, triplet.Triplet{94 * 94 * 225, 113 * 113 * 225, 2 * 2 * 225}, triplet.Triplet{58 * 58 * 225, 46 * 46 * 225, 127 * 127 * 225},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var got matrix
-			for _, sq := range lookupSubset(tt.args.set) {
-				if countDiagonals(sq) > 0 { //TODO refactor, no single resp atm
+			var got matrix.Matrix
+			for _, sq := range matrix.LookupSubset(tt.args.set) {
+				if matrix.CountDiagonals(sq) > 0 { //TODO refactor, no single resp atm
 					got = sq
 					break
 				}
@@ -75,7 +76,7 @@ func Test_findSquaresWithDiagonals(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want [][]matrix
+		want [][]matrix.Matrix
 	}{
 		{"base",
 			args{
@@ -84,7 +85,7 @@ func Test_findSquaresWithDiagonals(t *testing.T) {
 				1,
 				resChan,
 			},
-			[][]matrix{
+			[][]matrix.Matrix{
 				{
 					{
 						triplet.Triplet{97 * 97, 82 * 82, 74 * 74},
