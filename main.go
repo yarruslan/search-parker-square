@@ -3,13 +3,10 @@ package main
 import (
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/yarruslan/search-parker-square/internal/matrix"
 	triplet "github.com/yarruslan/search-parker-square/internal/triplet"
 )
-
-//type sumSquares triplet.SumSquares
 
 const threads = 11
 
@@ -21,8 +18,8 @@ const progressStep triplet.SumSquares = 100000
 //const memoryTarget int = 10000 //TODO target amount of triplets in memory
 
 func main() {
-	//TODO refactor for better test coverage
-	//separate IO and init from core
+
+	//Start listener for results channel
 	resultChan := make(chan []fmt.Stringer)
 	go func() {
 		for res := range resultChan {
@@ -31,11 +28,13 @@ func main() {
 			}
 		}
 	}()
-	findSquaresWithDiagonals(startSearch, endSearch, 1, resultChan)
+	//Start calculations
+	findSquaresWithDiagonals(startSearch, endSearch, triplet.SearchSemiMagic, resultChan)
 
 }
 
-func findSquaresWithDiagonals(start, end triplet.SumSquares, d int, res chan []fmt.Stringer) {
+// Main logic for searching magic squares: Generate triplets, try to combine them, count diagonals
+func findSquaresWithDiagonals(start, end triplet.SumSquares, searchType int, res chan []fmt.Stringer) {
 	tasklist := make(chan triplet.SumSquares)
 	mapLock := make(chan struct{}, threads)
 	var index []triplet.SumSquares
@@ -45,10 +44,10 @@ func findSquaresWithDiagonals(start, end triplet.SumSquares, d int, res chan []f
 		for task := range tasklist {
 			var ret []fmt.Stringer
 			mapLock <- struct{}{}
-			squares := matrix.LookupSubset(groupedTriplets[task])
+			squares := matrix.LookupSubset(groupedTriplets[task], searchType)
 			for _, sq := range squares {
 				diagonals := matrix.CountDiagonals(sq)
-				if diagonals >= d {
+				if diagonals >= searchType {
 					ret = append(ret, sq)
 				}
 			}
@@ -59,29 +58,37 @@ func findSquaresWithDiagonals(start, end triplet.SumSquares, d int, res chan []f
 			}
 		}
 	}
+	workerCloser := func() {
+		//at the end wait for completion and close. TODO convert to defer func
+		for i := 0; i < threads; i++ {
+			mapLock <- struct{}{}
+		}
+		close(res)
+	}
 	for i := 0; i < threads; i++ {
 		go worker()
 	}
+	defer workerCloser()
 	var progress = start
 	for step := 0; progress < end; step++ { //TODO fix end condition. should be exact target
 		sum := index[step]
-		if sum > completeSum {
+		if sum > completeSum { //TODO should avoid logic here. Iterator giving tasks should do the job
 			panic("Missing generated values for " + fmt.Sprint(sum))
 		} //Should not happen
 		if sum == completeSum {
-			log.Println("Processing sum: ", sum, " Timestamp: ", time.Now())
-			//wait till all workers finish task
+			log.Println("Processed sums up to: ", sum)
+			//steal locks from workers to prevend starting new jobs. Map is prone to read-write race.
 			for i := 0; i < threads; i++ {
 				mapLock <- struct{}{}
 			}
 			for i := progress; i < sum; i++ {
-				//free processed
+				//free processed triplets
 				delete(groupedTriplets, i)
 			}
 			//generate more
 			groupedTriplets, index, completeSum = triplet.Generate(groupedTriplets, index, completeSum, completeSum+progressStep)
 			log.Println("Generated next portion up to:", completeSum)
-			//release lock
+			//release locks
 			for i := 0; i < threads; i++ {
 				<-mapLock
 			}
@@ -90,9 +97,5 @@ func findSquaresWithDiagonals(start, end triplet.SumSquares, d int, res chan []f
 		progress = sum
 		tasklist <- sum
 	}
-	//at the end wait for completion and close
-	for i := 0; i < threads; i++ {
-		mapLock <- struct{}{}
-	}
-	close(res)
+
 }

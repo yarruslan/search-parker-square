@@ -3,63 +3,29 @@ package matrix
 import (
 	"fmt"
 
-	"github.com/yarruslan/search-parker-square/internal/triplet"
+	triplet "github.com/yarruslan/search-parker-square/internal/triplet"
 )
 
-type Matrix struct {
-	A triplet.Triplet
-	B triplet.Triplet
-	C triplet.Triplet
-}
+type Matrix [3]triplet.Triplet
 
 func (m Matrix) String() string {
-	return m.A.String() + m.B.String() + m.C.String() + "(" + fmt.Sprint(m.A.S1+m.A.S2+m.A.S3) + ")"
+	return m[0].String() + m[1].String() + m[2].String() + "(" + fmt.Sprint(m[0][0]+m[0][1]+m[0][2]) + ")"
 }
 
 // go through slice of equal squares and find match
-func LookupSubset(set []triplet.Triplet) []Matrix {
-	lenght := len(set)
-	if lenght < 7 { //broader search, including 1 diagonal
-		return []Matrix{}
-	}
+func LookupSubset(set []triplet.Triplet, searchType int) []Matrix {
 
-	//heuristic shortcut - 9 numbers repeat at least 2 times, and 4 of them at least 3 times
-	keysStat := make(map[int]int)
-	for _, v := range set {
-		keysStat[v.S1]++
-		keysStat[v.S2]++
-		keysStat[v.S3]++
-	}
-	var stat2, stat3 int
-	for _, v := range keysStat {
-		if v >= 2 {
-			stat2++
-		}
-		if v >= 3 {
-			stat3++
-		}
-	}
-	if stat2 < 9 || stat3 < 4 {
-		return []Matrix{}
-	}
+	set = triplet.FilterSubset(set, searchType)
+	lenght := len(set)
 
 	var result []Matrix
 	for i := 0; i < lenght-2; i++ {
-		if keysStat[set[i].S1] < 2 || keysStat[set[i].S2] < 2 || keysStat[set[i].S3] < 2 {
-			continue //heuristic - skip triplet that does not have a cross
-		}
 		for j := i + 1; j < lenght-1; j++ {
-			if keysStat[set[i].S1] < 2 || keysStat[set[i].S2] < 2 || keysStat[set[i].S3] < 2 {
-				continue
-			}
-			if !triplet.NoOverlap2(set[i], set[j]) {
+			if set[i].HasOverlap2(set[j]) {
 				continue
 			}
 			for k := j + 1; k < lenght; k++ {
-				if keysStat[set[i].S1] < 2 || keysStat[set[i].S2] < 2 || keysStat[set[i].S3] < 2 {
-					continue
-				}
-				if !triplet.NoOverlap3(set[i], set[j], set[k]) {
+				if set[i].HasOverlap2(set[k]) || set[j].HasOverlap2(set[k]) { //i-j checked before
 					continue
 				}
 				candidate := checkCandidate1(Matrix{set[i], set[j], set[k]})
@@ -69,55 +35,53 @@ func LookupSubset(set []triplet.Triplet) []Matrix {
 						result = append(result, candidate)
 					}
 				}
-
 			}
-
 		}
 	}
-
 	return result
 }
 
 // true if has 1 vertical match
 func checkCandidate1(x Matrix) Matrix {
-	sum := x.A.S1 + x.A.S2 + x.A.S3
-	if x.A.S1+x.B.S1+x.C.S1 == sum {
+	sum := x[0][0] + x[0][1] + x[0][2]
+	//TODO change to switch. x[0][0] is common, unnecessary
+	if x[0][0]+x[1][0]+x[2][0] == sum {
 		return x
 	}
-	if x.A.S1+x.B.S1+x.C.S2 == sum {
-		x.C.S1, x.C.S2 = x.C.S2, x.C.S1
+	if x[0][0]+x[1][0]+x[2][1] == sum {
+		x[2][0], x[2][1] = x[2][1], x[2][0]
 		return x
 	}
-	if x.A.S1+x.B.S1+x.C.S3 == sum {
-		x.C.S1, x.C.S3 = x.C.S3, x.C.S1
+	if x[0][0]+x[1][0]+x[2][2] == sum {
+		x[2][0], x[2][2] = x[2][2], x[2][0]
 		return x
 	}
-	if x.A.S1+x.B.S2+x.C.S1 == sum {
-		x.B.S1, x.B.S2 = x.B.S2, x.B.S1
+	if x[0][0]+x[1][1]+x[2][0] == sum {
+		x[1][0], x[1][1] = x[1][1], x[1][0]
 		return x
 	}
-	if x.A.S1+x.B.S2+x.C.S2 == sum {
-		x.B.S1, x.B.S2 = x.B.S2, x.B.S1
-		x.C.S1, x.C.S2 = x.C.S2, x.C.S1
+	if x[0][0]+x[1][1]+x[2][1] == sum {
+		x[1][0], x[1][1] = x[1][1], x[1][0]
+		x[2][0], x[2][1] = x[2][1], x[2][0]
 		return x
 	}
-	if x.A.S1+x.B.S2+x.C.S3 == sum {
-		x.B.S1, x.B.S2 = x.B.S2, x.B.S1
-		x.C.S1, x.C.S3 = x.C.S3, x.C.S1
+	if x[0][0]+x[1][1]+x[2][2] == sum {
+		x[1][0], x[1][1] = x[1][1], x[1][0]
+		x[2][0], x[2][2] = x[2][2], x[2][0]
 		return x
 	}
-	if x.A.S1+x.B.S3+x.C.S1 == sum {
-		x.B.S1, x.B.S3 = x.B.S3, x.B.S1
+	if x[0][0]+x[1][2]+x[2][0] == sum {
+		x[1][0], x[1][2] = x[1][2], x[1][0]
 		return x
 	}
-	if x.A.S1+x.B.S3+x.C.S2 == sum {
-		x.B.S1, x.B.S3 = x.B.S3, x.B.S1
-		x.C.S1, x.C.S2 = x.C.S2, x.C.S1
+	if x[0][0]+x[1][2]+x[2][1] == sum {
+		x[1][0], x[1][2] = x[1][2], x[1][0]
+		x[2][0], x[2][1] = x[2][1], x[2][0]
 		return x
 	}
-	if x.A.S1+x.B.S3+x.C.S3 == sum {
-		x.B.S1, x.B.S3 = x.B.S3, x.B.S1
-		x.C.S1, x.C.S3 = x.C.S3, x.C.S1
+	if x[0][0]+x[1][2]+x[2][2] == sum {
+		x[1][0], x[1][2] = x[1][2], x[1][0]
+		x[2][0], x[2][2] = x[2][2], x[2][0]
 		return x
 	}
 	return Matrix{}
@@ -125,45 +89,45 @@ func checkCandidate1(x Matrix) Matrix {
 
 // true if has 2 vertical match
 func checkCandidate2(x Matrix) Matrix {
-	sum := x.A.S1 + x.A.S2 + x.A.S3
-	if x.A.S2+x.B.S2+x.C.S2 == sum {
+	sum := x[0][0] + x[0][1] + x[0][2]
+	if x[0][1]+x[1][1]+x[2][1] == sum {
 		return x
 	}
-	if x.A.S2+x.B.S2+x.C.S3 == sum {
-		x.C.S2, x.C.S3 = x.C.S3, x.C.S2
+	if x[0][1]+x[1][1]+x[2][2] == sum {
+		x[2][1], x[2][2] = x[2][2], x[2][1]
 		return x
 	}
-	if x.A.S2+x.B.S3+x.C.S2 == sum {
-		x.B.S2, x.B.S3 = x.B.S3, x.B.S2
+	if x[0][1]+x[1][2]+x[2][1] == sum {
+		x[1][1], x[1][2] = x[1][2], x[1][1]
 		return x
 	}
-	if x.A.S2+x.B.S3+x.C.S3 == sum {
-		x.C.S2, x.C.S3 = x.C.S3, x.C.S2
-		x.B.S2, x.B.S3 = x.B.S3, x.B.S2
+	if x[0][1]+x[1][2]+x[2][2] == sum {
+		x[2][1], x[2][2] = x[2][2], x[2][1]
+		x[1][1], x[1][2] = x[1][2], x[1][1]
 		return x
 	}
 	return Matrix{}
 }
 
 func CountDiagonals(x Matrix) int {
-	sum := x.A.S1 + x.A.S2 + x.A.S3
+	sum := x[0][0] + x[0][1] + x[0][2]
 	nrDiagonals := 0
-	if x.A.S1+x.B.S2+x.C.S3 == sum {
+	if x[0][0]+x[1][1]+x[2][2] == sum {
 		nrDiagonals++
 	}
-	if x.A.S2+x.B.S3+x.C.S1 == sum {
+	if x[0][1]+x[1][2]+x[2][0] == sum {
 		nrDiagonals++
 	}
-	if x.A.S3+x.B.S1+x.C.S2 == sum {
+	if x[0][2]+x[1][0]+x[2][1] == sum {
 		nrDiagonals++
 	}
-	if x.A.S3+x.B.S2+x.C.S1 == sum {
+	if x[0][2]+x[1][1]+x[2][0] == sum {
 		nrDiagonals++
 	}
-	if x.A.S2+x.B.S1+x.C.S3 == sum {
+	if x[0][1]+x[1][0]+x[2][2] == sum {
 		nrDiagonals++
 	}
-	if x.A.S1+x.B.S3+x.C.S2 == sum {
+	if x[0][0]+x[1][2]+x[2][1] == sum {
 		nrDiagonals++
 	}
 

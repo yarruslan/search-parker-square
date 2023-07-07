@@ -52,7 +52,7 @@ func Test_lookupSubset(t *testing.T) { //[97, 82, 74](21609) [94, 113, 2](21609)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var got matrix.Matrix
-			for _, sq := range matrix.LookupSubset(tt.args.set) {
+			for _, sq := range matrix.LookupSubset(tt.args.set, triplet.SearchSemiMagic) {
 				if matrix.CountDiagonals(sq) > 0 { //TODO refactor, no single resp atm
 					got = sq
 					break
