@@ -10,7 +10,7 @@ import (
 type IndexedTriplets map[SumSquares][]Triplet
 type SumSquares int
 type Triplet [3]SumSquares
-type Generator struct {
+type Generator struct { //TODO check is all of it necessary?
 	set          IndexedTriplets
 	index        []SumSquares
 	id           int // index[id] is the last returned sum
@@ -42,6 +42,7 @@ func (g *Generator) Init(start, goal, window SumSquares, readerThreads int) *Gen
 	g.index = []SumSquares{}
 	g.MapLock = make(chan struct{}, readerThreads)
 	g.generate(start)
+	g.updateIndex()
 	return g
 }
 
@@ -86,16 +87,32 @@ func (g *Generator) next() int {
 }
 
 func (g *Generator) updateIndex() {
-	//TODO
+
+	exist := make(map[SumSquares]bool)
+	for _, v := range g.index {
+		exist[v] = true
+	}
+	for k := range g.set {
+		//avoid duplicates
+		if !exist[k] {
+			g.index = append(g.index, k)
+		}
+	}
+	sort.Slice(g.index, func(i, j int) bool {
+		return g.index[i] < g.index[j]
+	})
+
 	return
 }
 
+/*
 func (g *Generator) generate(start SumSquares) {
-	g.set, g.index, _ = Generate(g.set, g.index, start, start+g.bufferWindow)
+	g.set = Generate(g.set, start, start+g.bufferWindow)
 }
+*/
 
 func (g *Generator) deleteProcessed() {
-	if len(g.index) > g.id {
+	if len(g.index) > g.id+1 {
 		log.Fatal("Partial clean-up not implemented")
 	}
 	g.set = make(IndexedTriplets)
@@ -103,11 +120,13 @@ func (g *Generator) deleteProcessed() {
 	return
 }
 
-func Generate(groups IndexedTriplets, index []SumSquares, windowLow, windowHigh SumSquares) (IndexedTriplets, []SumSquares, SumSquares) {
+func (g *Generator) generate(windowLow SumSquares) {
 	//TODO not single responsibility. Refactor to object Generator with internal state
+	windowHigh := windowLow + g.bufferWindow
 	count := 0
 	start := int(math.Floor(math.Sqrt(float64(windowLow) / 3)))
 	stop := int(math.Ceil(math.Sqrt(float64(windowHigh))))
+
 	for i := start; i < stop; i++ {
 		//stop uncenessary cycles early
 		for j := 1; j < i; j++ {
@@ -121,7 +140,7 @@ func Generate(groups IndexedTriplets, index []SumSquares, windowLow, windowHigh 
 						break
 					}
 					if sum >= windowLow {
-						groups[sum] = append(groups[sum], Triplet{SumSquares(i * i), SumSquares(j * j), SumSquares(k * k)})
+						g.set[sum] = append(g.set[sum], Triplet{SumSquares(i * i), SumSquares(j * j), SumSquares(k * k)})
 						count++
 					}
 				}
@@ -129,28 +148,6 @@ func Generate(groups IndexedTriplets, index []SumSquares, windowLow, windowHigh 
 		}
 	}
 
-	exist := make(map[SumSquares]bool)
-	for _, v := range index {
-		exist[v] = true
-	}
-	for k := range groups {
-		//avoid duplicates
-		if !exist[k] {
-			index = append(index, k)
-		}
-	}
-	sort.Slice(index, func(i, j int) bool {
-		return index[i] < index[j]
-	})
-	var maxValueInWindow SumSquares
-	for _, v := range index {
-		if v > windowHigh {
-			break
-		}
-		maxValueInWindow = v
-	}
-
-	return groups, index, maxValueInWindow
 }
 
 func (a *Triplet) HasOverlap2(b Triplet) bool {
@@ -232,4 +229,8 @@ func (g *Generator) releaseExclusiveLock() {
 	for i := 0; i < cap(g.MapLock); i++ {
 		<-g.MapLock
 	}
+}
+
+func (g *Generator) GetSet() IndexedTriplets {
+	return g.set
 }

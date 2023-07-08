@@ -1,26 +1,18 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"sync"
-	"time"
 
 	"github.com/yarruslan/search-parker-square/internal/matrix"
 	triplet "github.com/yarruslan/search-parker-square/internal/triplet"
 )
 
-const threads = 1
-
-//var mapLock = make(chan struct{}, threads) //TODO - what is a good way to get rid from global lock?
-
-// const max int = 5000 //greatest number to put to square of squares
-const startSearch triplet.SumSquares = 0
-const endSearch triplet.SumSquares = 150000
-const progressStep triplet.SumSquares = 100000
-
-//const memoryTarget int = 10000 //TODO target amount of triplets in memory
+//const memoryTarget int = 10000 //TODO target amount of triplets in memory, not window
 
 func main() {
+
+	startSearch, endSearch, progressStep, threads, searchType := getParametersFromFlags()
 
 	//Start listener for results channel
 	resultChan := make(chan []fmt.Stringer)
@@ -31,44 +23,53 @@ func main() {
 			}
 		}
 	}()
-	//Start calculations
-	findSquaresWithDiagonals(startSearch, endSearch, triplet.SearchSemiMagic, resultChan)
+
+	new(matrix.Generator).Init(startSearch, endSearch, progressStep, threads).FindSquaresWithDiagonals(searchType, resultChan)
 
 }
 
-// Main logic for searching magic squares: Generate triplets, try to combine them, count diagonals
-func findSquaresWithDiagonals(start, end triplet.SumSquares, searchType int, res chan []fmt.Stringer) {
+func getParametersFromFlags() (start, end, progress triplet.SumSquares, threads int, searchType int) {
+	fStart := flag.Int("start", 1, "Sum of squares in line to start search")
+	fEnd := flag.Int("end", 1000000, "Sum of squares in line to end search")
+	fProgress := flag.Int("progress", 100000, "Report progress at section of this size")
+	fThreads := flag.Int("threads", 11, "Number of go-routines performing calculations in parallel")
+	fMode := flag.String("mode", "1diag", "Type of search \"0diag\"|\"1diag\"|\"2diag\" ") //Int("Starging value", 1, "Sum of squares in line to start search")
+	flag.Parse()
 
-	generator := new(triplet.Generator).Init(start, end, progressStep, threads)
-	wg := &sync.WaitGroup{}
-
-	worker := func(tasklist chan []triplet.Triplet) {
-		defer wg.Done()
-		wg.Add(1)
-		for task := range tasklist {
-			var ret []fmt.Stringer
-			generator.MapLock <- struct{}{} //mapLock <- struct{}{}
-			squares := matrix.LookupSubset(task, searchType)
-			for _, sq := range squares {
-				diagonals := matrix.CountDiagonals(sq)
-				if diagonals >= searchType {
-					ret = append(ret, sq)
-				}
-			}
-			<-generator.MapLock
-			if len(ret) > 0 {
-				res <- ret
-			}
+	if fStart != nil {
+		start = triplet.SumSquares(*fStart)
+	} else {
+		start = 0
+	}
+	if fEnd != nil {
+		end = triplet.SumSquares(*fEnd)
+	} else {
+		end = 1000000
+	}
+	if fProgress != nil {
+		progress = triplet.SumSquares(*fProgress)
+	} else {
+		progress = 100000
+	}
+	if fThreads != nil {
+		threads = *fThreads
+	} else {
+		threads = 11
+	}
+	if fMode != nil {
+		switch *fMode {
+		case "0diag":
+			searchType = triplet.SearchNoMagic
+		case "1diag":
+			searchType = triplet.SearchSemiMagic
+		case "2diag":
+			searchType = triplet.SearchPureMagic
+		default:
+			searchType = triplet.SearchSemiMagic
 		}
+	} else {
+		searchType = triplet.SearchSemiMagic
 	}
 
-	for i := 0; i < threads; i++ {
-		go worker(generator.Iterate())
-	}
-
-	defer func() {
-		time.Sleep(time.Second * 1) //TODO - race here :(
-		wg.Wait()
-		close(res)
-	}()
+	return
 }

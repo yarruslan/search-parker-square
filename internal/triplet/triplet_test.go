@@ -73,15 +73,14 @@ func TestGenerate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotMap, gotSlice, gotEnd := Generate(tt.args.groups, tt.args.index, tt.args.windowLow, tt.args.windowHigh)
+			g := new(Generator).Init(tt.args.windowLow, tt.args.windowHigh, tt.args.windowHigh-tt.args.windowLow, 11)
+			//gotMap, gotSlice := Generate(tt.args.groups, tt.args.index, tt.args.windowLow, tt.args.windowHigh)
+			gotMap, gotSlice := g.set, g.index
 			if !reflect.DeepEqual(gotMap, tt.wantMap) {
 				t.Errorf("Generate() got = %v, want %v", gotMap, tt.wantMap)
 			}
 			if !reflect.DeepEqual(gotSlice, tt.wantSlice) {
 				t.Errorf("Generate() got1 = %v, want %v", gotSlice, tt.wantSlice)
-			}
-			if !reflect.DeepEqual(gotEnd, tt.wantEnd) {
-				t.Errorf("Generate() got2 = %v, want %v", gotEnd, tt.wantEnd)
 			}
 		})
 	}
@@ -141,7 +140,9 @@ func TestGenerateCheckCount(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotMap, _, _ := Generate(tt.args.groups, tt.args.index, tt.args.windowLow, tt.args.windowHigh)
+			g := new(Generator).Init(tt.args.windowLow, tt.args.windowHigh, tt.args.windowHigh-tt.args.windowLow, 11)
+			//gotMap, _ := Generate(tt.args.groups, tt.args.index, tt.args.windowLow, tt.args.windowHigh)
+			gotMap := g.set
 			for k, v := range gotMap {
 				if len(v) != tt.countMap[k] {
 					t.Errorf("Generate() got = %v: %v, want %v: %v", k, len(v), k, tt.countMap[k])
@@ -152,16 +153,6 @@ func TestGenerateCheckCount(t *testing.T) {
 					t.Errorf("Generate() got = %v: %v, want %v: %v", k, len(gotMap[k]), k, v)
 				}
 			}
-
-			/*if !reflect.DeepEqual(gotMap, tt.wantMap) {
-				t.Errorf("Generate() got = %v, want %v", gotMap, tt.wantMap)
-			}
-			if !reflect.DeepEqual(gotSlice, tt.wantSlice) {
-				t.Errorf("Generate() got1 = %v, want %v", gotSlice, tt.wantSlice)
-			}
-			if !reflect.DeepEqual(gotEnd, tt.wantEnd) {
-				t.Errorf("Generate() got2 = %v, want %v", gotEnd, tt.wantEnd)
-			}*/
 		})
 	}
 }

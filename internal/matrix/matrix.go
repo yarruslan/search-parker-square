@@ -2,11 +2,41 @@ package matrix
 
 import (
 	"fmt"
+	"sync"
+	"time"
 
 	triplet "github.com/yarruslan/search-parker-square/internal/triplet"
 )
 
 type Matrix [3]triplet.Triplet
+
+type Generator struct {
+	//set          IndexedTriplets
+	//index        []SumSquares
+	//id           int // index[id] is the last returned sum
+	bufferWindow triplet.SumSquares
+	start        triplet.SumSquares
+	goal         triplet.SumSquares
+	iterator     chan []Matrix
+	//MapLock      chan struct{}
+	threads int
+}
+
+func (g *Generator) Init(start, goal, window triplet.SumSquares, readerThreads int) *Generator {
+	//g.set = make(IndexedTriplets)
+	g.bufferWindow = window
+	g.start = start
+	g.goal = goal
+	g.threads = readerThreads
+	//g.index = []SumSquares{}
+	//g.MapLock = make(chan struct{}, readerThreads)
+	//g.generate(start)
+	return g
+}
+
+func (g *Generator) GetSquares() {
+
+}
 
 func (m Matrix) String() string {
 	return m[0].String() + m[1].String() + m[2].String() + "(" + fmt.Sprint(m[0][0]+m[0][1]+m[0][2]) + ")"
@@ -132,4 +162,41 @@ func CountDiagonals(x Matrix) int {
 	}
 
 	return nrDiagonals
+}
+
+// Main logic for searching magic squares: Generate triplets, try to combine them, count diagonals
+func (g *Generator) FindSquaresWithDiagonals(searchType int, res chan []fmt.Stringer) {
+
+	generator := new(triplet.Generator).Init(g.start, g.goal, g.bufferWindow, g.threads)
+	wg := &sync.WaitGroup{}
+
+	worker := func(tasklist chan []triplet.Triplet) {
+		defer wg.Done()
+		wg.Add(1)
+		for task := range tasklist {
+			var ret []fmt.Stringer
+			generator.MapLock <- struct{}{} //mapLock <- struct{}{}
+			squares := LookupSubset(task, searchType)
+			for _, sq := range squares {
+				diagonals := CountDiagonals(sq)
+				if diagonals >= searchType {
+					ret = append(ret, sq)
+				}
+			}
+			<-generator.MapLock
+			if len(ret) > 0 {
+				res <- ret
+			}
+		}
+	}
+
+	for i := 0; i < g.threads; i++ {
+		go worker(generator.Iterate())
+	}
+
+	defer func() {
+		time.Sleep(time.Second * 1) //TODO - race here :(
+		wg.Wait()
+		close(res)
+	}()
 }

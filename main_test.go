@@ -1,7 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
+	"log"
+	"os"
 	"reflect"
 	"testing"
 
@@ -13,12 +17,10 @@ func Test_lookupSubset(t *testing.T) { //[97, 82, 74](21609) [94, 113, 2](21609)
 	type args struct {
 		set []triplet.Triplet
 	}
-	set1 := make(triplet.IndexedTriplets)
-	set1, _, _ = triplet.Generate(set1, []triplet.SumSquares{}, 21609, 21609)
-	setx16 := make(triplet.IndexedTriplets)
-	setx16, _, _ = triplet.Generate(setx16, []triplet.SumSquares{}, 21609*16, 21609*16)
-	setx225 := make(triplet.IndexedTriplets)
-	setx225, _, _ = triplet.Generate(setx225, []triplet.SumSquares{}, 21609*225, 21609*225)
+
+	set1 := new(triplet.Generator).Init(21609, 21609, 0, 11).GetSet()
+	setx16 := new(triplet.Generator).Init(21609*16, 21609*16, 0, 11).GetSet()
+	setx225 := new(triplet.Generator).Init(21609*225, 21609*225, 0, 11).GetSet()
 	tests := []struct {
 		name string
 		args args
@@ -136,6 +138,8 @@ func Test_findSquaresWithDiagonals(t *testing.T) {
 			},
 		},
 	}
+	progressStep := triplet.SumSquares(100000)
+	threads := 11
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var got [][]fmt.Stringer
@@ -146,7 +150,8 @@ func Test_findSquaresWithDiagonals(t *testing.T) {
 				}
 				done <- struct{}{}
 			}()
-			findSquaresWithDiagonals(tt.args.start, tt.args.end, tt.args.d, tt.args.res) //async race possible? more than 1 responce?
+			g := new(matrix.Generator).Init(tt.args.start, tt.args.end, progressStep, threads)
+			g.FindSquaresWithDiagonals(tt.args.d, tt.args.res) //async race possible? more than 1 responce?
 			//for got := range tt.args.res {
 			<-done
 			if len(tt.want) != len(got) {
@@ -163,6 +168,54 @@ func Test_findSquaresWithDiagonals(t *testing.T) {
 				}
 			}
 			//}
+		})
+	}
+}
+
+func Test_main(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+		want string
+	}{
+		{name: "dummy",
+			args: []string{"", "-end", "100000"},
+			want: `Square  [97 82 74][94 113 2][58 46 127](21609)  has 1 diagonals
+Square  [97 94 58][82 113 46][74 2 127](21609)  has 1 diagonals
+Square  [194 164 148][188 226 4][116 92 254](86436)  has 1 diagonals
+Square  [194 188 116][164 226 92][148 4 254](86436)  has 1 diagonals
+`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Args = tt.args
+
+			old := os.Stdout
+			r, w, err := os.Pipe()
+			if err != nil {
+				log.Fatal("File error")
+			}
+			os.Stdout = w
+
+			main()
+
+			outC := make(chan string)
+			// copy the output in a separate goroutine so printing can't block indefinitely
+			go func() {
+				var buf bytes.Buffer
+				io.Copy(&buf, r)
+				outC <- buf.String()
+			}()
+			// back to normal state
+			w.Close()
+			os.Stdout = old // restoring the real stdout
+			got := <-outC
+
+			//os.Stdout = stdout
+			if got != tt.want {
+				t.Errorf("got \n%v, want \n%v", got, tt.want)
+			}
+
 		})
 	}
 }
