@@ -72,18 +72,40 @@ func Test_findSquaresWithDiagonals(t *testing.T) {
 		d     int
 		res   chan []fmt.Stringer
 	}
-	resChan := make(chan []fmt.Stringer)
 	tests := []struct {
 		name string
 		args args
 		want [][]matrix.Matrix
 	}{
+		{"baser",
+			args{
+				21609,
+				21609,
+				1,
+				make(chan []fmt.Stringer),
+			},
+			[][]matrix.Matrix{
+				{
+					{
+						triplet.Triplet{97 * 97, 82 * 82, 74 * 74},
+						triplet.Triplet{94 * 94, 113 * 113, 2 * 2},
+						triplet.Triplet{58 * 58, 46 * 46, 127 * 127},
+					},
+					{
+						triplet.Triplet{97 * 97, 94 * 94, 58 * 58},
+						triplet.Triplet{82 * 82, 113 * 113, 46 * 46},
+						triplet.Triplet{74 * 74, 2 * 2, 127 * 127},
+					},
+				},
+			},
+		},
+
 		{"base",
 			args{
 				20000,
 				88000,
 				1,
-				resChan,
+				make(chan []fmt.Stringer),
 			},
 			[][]matrix.Matrix{
 				{
