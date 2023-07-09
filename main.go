@@ -4,11 +4,19 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/yarruslan/search-parker-square/internal/cube"
 	"github.com/yarruslan/search-parker-square/internal/square"
 	"github.com/yarruslan/search-parker-square/internal/triplet"
 )
 
-//const memoryTarget int = 10000 //TODO target amount of triplets in memory, not window
+// const memoryTarget int = 10000 //TODO target amount of triplets in memory, not window
+var ( //TODO should be better way to initialize flags
+	fStart    *int
+	fEnd      *int
+	fProgress *int
+	fThreads  *int
+	fMode     *string
+)
 
 func main() {
 
@@ -23,17 +31,23 @@ func main() {
 			}
 		}
 	}()
-
-	new(square.Generator).Init(new(triplet.Generator).Init(startSearch, endSearch, progressStep, threads), threads).GenerateSquares(searchType, result)
+	if searchType == triplet.SearchPureMagic || searchType == triplet.SearchSemiMagic || searchType == triplet.SearchNoMagic {
+		new(square.Generator).Init(new(triplet.Generator).Init(startSearch, endSearch, progressStep, threads), threads).GenerateSquares(searchType, result)
+	}
+	if searchType == triplet.SearchCube {
+		new(cube.Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(startSearch, endSearch, progressStep, threads), threads)).GenerateCubes(searchType, result)
+	}
 
 }
 
 func getParametersFromFlags() (start, end, progress triplet.Square, threads int, searchType int) {
-	fStart := flag.Int("start", 1, "Sum of squares in line to start search")
-	fEnd := flag.Int("end", 1000000, "Sum of squares in line to end search")
-	fProgress := flag.Int("progress", 100000, "Report progress at section of this size")
-	fThreads := flag.Int("threads", 11, "Number of go-routines performing calculations in parallel")
-	fMode := flag.String("mode", "1diag", "Type of search \"0diag\"|\"1diag\"|\"2diag\" ") //Int("Starging value", 1, "Sum of squares in line to start search")
+	if fStart == nil {
+		fStart = flag.Int("start", 1, "Sum of squares in line to start search")
+		fEnd = flag.Int("end", 1000000, "Sum of squares in line to end search")
+		fProgress = flag.Int("progress", 100000, "Report progress at section of this size")
+		fThreads = flag.Int("threads", 11, "Number of go-routines performing calculations in parallel")
+		fMode = flag.String("mode", "1diag", "Type of search \"0diag\"|\"1diag\"|\"2diag\"|\"cube\"") //Int("Starging value", 1, "Sum of squares in line to start search")
+	}
 	flag.Parse()
 
 	if fStart != nil {
@@ -64,6 +78,8 @@ func getParametersFromFlags() (start, end, progress triplet.Square, threads int,
 			searchType = triplet.SearchSemiMagic
 		case "2diag":
 			searchType = triplet.SearchPureMagic
+		case "cube":
+			searchType = triplet.SearchCube
 		default:
 			searchType = triplet.SearchSemiMagic
 		}

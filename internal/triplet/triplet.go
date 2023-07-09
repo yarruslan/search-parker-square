@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"sort"
+	//"github.com/yarruslan/search-parker-square/internal/square"
 )
 
 type IndexedTriplets map[Square][]Triplet
@@ -23,6 +24,7 @@ type Generator struct {
 const SearchPureMagic int = 2
 const SearchSemiMagic int = 1
 const SearchNoMagic int = 0
+const SearchCube = 100
 
 func (t *Triplet) getRoot() (ret [3]int) {
 	ret[0] = int(math.Sqrt(float64(t[0])))
@@ -151,16 +153,18 @@ func (a *Triplet) HasOverlap(b Triplet) bool {
 }
 
 func FilterSubset(in []Triplet, searchType int) []Triplet { //TODO split to different filters. Make it a method, or ref to func
-	var minDiagonals int
+	var minTriplets int
 	switch searchType {
 	case SearchPureMagic:
-		minDiagonals = 8
+		minTriplets = 8
 	case SearchSemiMagic:
-		minDiagonals = 7
+		minTriplets = 7
 	case SearchNoMagic:
-		minDiagonals = 6
+		minTriplets = 6
+	case SearchCube:
+		minTriplets = 27
 	}
-	if len(in) < minDiagonals {
+	if len(in) < minTriplets {
 		return []Triplet{}
 	}
 	keysStat := make(map[Square]int)
@@ -186,6 +190,9 @@ func FilterSubset(in []Triplet, searchType int) []Triplet { //TODO split to diff
 	if (searchType == SearchPureMagic) && stat3 < 4 {
 		return []Triplet{}
 	}
+	if (searchType == SearchCube) && stat3 < 27 {
+		return []Triplet{}
+	}
 	if (searchType == SearchSemiMagic) && stat3 < 2 {
 		return []Triplet{}
 	}
@@ -197,6 +204,8 @@ func FilterSubset(in []Triplet, searchType int) []Triplet { //TODO split to diff
 		switch searchType {
 		case SearchPureMagic, SearchSemiMagic, SearchNoMagic:
 			dimensions = 2 //heuristic shortcut: each number should be in at least 2 triplets to be part of the square
+		case SearchCube:
+			dimensions = 3
 		}
 		if keysStat[t[0]] >= dimensions {
 			filtered = append(filtered, t)

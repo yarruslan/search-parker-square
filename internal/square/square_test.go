@@ -36,3 +36,5 @@ func TestMatrix_String(t *testing.T) {
 		})
 	}
 }
+
+//TODO test coverage is negligible

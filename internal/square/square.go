@@ -137,11 +137,11 @@ func (g *Generator) GenerateSquares(searchType int, res chan []fmt.Stringer) { /
 			var ret []fmt.Stringer
 			g.tg.MapLock <- struct{}{}
 			squares := CombineTripletsToMatrixes(task, searchType)
+			<-g.tg.MapLock
 			squares = filter(squares, searchType)
 			for _, sq := range squares {
 				ret = append(ret, sq)
 			}
-			<-g.tg.MapLock
 			if len(ret) > 0 {
 				res <- ret
 			}
@@ -161,8 +161,20 @@ func (g *Generator) GenerateSquares(searchType int, res chan []fmt.Stringer) { /
 
 func filter(in []Matrix, searchType int) []Matrix {
 	var out []Matrix
+	var diagonals int
+	if searchType == triplet.SearchCube && len(in) < 9 {
+		return []Matrix{}
+	}
+	switch searchType {
+	case triplet.SearchPureMagic:
+		diagonals = 2
+	case triplet.SearchSemiMagic:
+		diagonals = 1
+	case triplet.SearchNoMagic, triplet.SearchCube:
+		diagonals = 0
+	}
 	for _, sq := range in {
-		if sq.CountDiagonals() >= searchType { //TODO assume constants as keys not values
+		if sq.CountDiagonals() >= diagonals {
 			out = append(out, sq)
 		}
 	}
