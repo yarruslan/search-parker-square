@@ -8,34 +8,34 @@ import (
 func TestGenerate(t *testing.T) {
 	type args struct {
 		groups     IndexedTriplets
-		index      []SumSquares
-		windowLow  SumSquares
-		windowHigh SumSquares
+		index      []Square
+		windowLow  Square
+		windowHigh Square
 	}
 	tests := []struct {
 		name      string
 		args      args
 		wantMap   IndexedTriplets
-		wantSlice []SumSquares
-		wantEnd   SumSquares
+		wantSlice []Square
+		wantEnd   Square
 	}{
 		{
 			name: "TestEmpty",
 			args: args{
 				groups:     IndexedTriplets{},
-				index:      []SumSquares{},
+				index:      []Square{},
 				windowLow:  0,
 				windowHigh: 1,
 			},
 			wantMap:   IndexedTriplets{},
-			wantSlice: []SumSquares{},
+			wantSlice: []Square{},
 			wantEnd:   0,
 		},
 		{
 			name: "Test Min",
 			args: args{
 				groups:     IndexedTriplets{},
-				index:      []SumSquares{},
+				index:      []Square{},
 				windowLow:  5,
 				windowHigh: 5,
 			},
@@ -44,8 +44,8 @@ func TestGenerate(t *testing.T) {
 					{4, 1, 0},
 				},
 			},
-			wantSlice: []SumSquares{
-				SumSquares(5),
+			wantSlice: []Square{
+				Square(5),
 			},
 			wantEnd: 5,
 		},
@@ -53,7 +53,7 @@ func TestGenerate(t *testing.T) {
 			name: "Test Min+1",
 			args: args{
 				groups:     IndexedTriplets{},
-				index:      []SumSquares{},
+				index:      []Square{},
 				windowLow:  6,
 				windowHigh: 13,
 			},
@@ -65,7 +65,7 @@ func TestGenerate(t *testing.T) {
 					{9, 4, 0},
 				},
 			},
-			wantSlice: []SumSquares{
+			wantSlice: []Square{
 				10, 13,
 			},
 			wantEnd: 13,
@@ -89,24 +89,24 @@ func TestGenerate(t *testing.T) {
 func TestGenerateCheckCount(t *testing.T) {
 	type args struct {
 		groups     IndexedTriplets
-		index      []SumSquares
-		windowLow  SumSquares
-		windowHigh SumSquares
+		index      []Square
+		windowLow  Square
+		windowHigh Square
 	}
 	tests := []struct {
 		name     string
 		args     args
-		countMap map[SumSquares]int
+		countMap map[Square]int
 	}{
 		{
 			name: "Test minimal",
 			args: args{
 				groups:     IndexedTriplets{},
-				index:      []SumSquares{},
+				index:      []Square{},
 				windowLow:  0,
 				windowHigh: 5,
 			},
-			countMap: map[SumSquares]int{
+			countMap: map[Square]int{
 				5: 1,
 			},
 		},
@@ -114,11 +114,11 @@ func TestGenerateCheckCount(t *testing.T) {
 			name: "Test more",
 			args: args{
 				groups:     IndexedTriplets{},
-				index:      []SumSquares{},
+				index:      []Square{},
 				windowLow:  0,
 				windowHigh: 13,
 			},
-			countMap: map[SumSquares]int{
+			countMap: map[Square]int{
 				5:  1,
 				10: 1,
 				13: 1,
@@ -129,11 +129,11 @@ func TestGenerateCheckCount(t *testing.T) {
 			name: "Test at 1st square",
 			args: args{
 				groups:     IndexedTriplets{},
-				index:      []SumSquares{},
+				index:      []Square{},
 				windowLow:  21609,
 				windowHigh: 21609,
 			},
-			countMap: map[SumSquares]int{
+			countMap: map[Square]int{
 				21609: 40,
 			},
 		},

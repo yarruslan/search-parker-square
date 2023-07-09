@@ -1,4 +1,4 @@
-package matrix
+package square
 
 import (
 	"testing"

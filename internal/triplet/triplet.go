@@ -7,15 +7,15 @@ import (
 	"sort"
 )
 
-type IndexedTriplets map[SumSquares][]Triplet
-type SumSquares int
-type Triplet [3]SumSquares
-type Generator struct { //TODO check is all of it necessary?
+type IndexedTriplets map[Square][]Triplet
+type Square int
+type Triplet [3]Square
+type Generator struct {
 	set          IndexedTriplets
-	index        []SumSquares
-	id           int // index[id] is the last returned sum
-	bufferWindow SumSquares
-	goal         SumSquares
+	index        []Square //sorted list of generated sums
+	id           int      // index[id] is the last returned sum
+	bufferWindow Square
+	goal         Square
 	iterator     chan []Triplet
 	MapLock      chan struct{}
 }
@@ -35,25 +35,26 @@ func (t *Triplet) String() string {
 	return fmt.Sprint(t.getRoot())
 }
 
-func (g *Generator) Init(start, goal, window SumSquares, readerThreads int) *Generator {
+func (g *Generator) Init(start, goal, window Square, readerThreads int) *Generator {
 	g.set = make(IndexedTriplets)
 	g.bufferWindow = window
 	g.goal = goal
-	g.index = []SumSquares{}
+	g.index = []Square{}
 	g.MapLock = make(chan struct{}, readerThreads)
 	g.generate(start)
 	g.updateIndex()
 	return g
 }
 
-func (g *Generator) minIndexed() SumSquares {
-	if len(g.index) > 0 {
-		return g.index[0]
+/*
+	func (g *Generator) minIndexed() Square {
+		if len(g.index) > 0 {
+			return g.index[0]
+		}
+		return 0
 	}
-	return 0
-}
-
-func (g *Generator) maxIndexed() SumSquares {
+*/
+func (g *Generator) maxIndexed() Square {
 	if len(g.index) > 0 {
 		return g.index[len(g.index)-1]
 	}
@@ -88,7 +89,7 @@ func (g *Generator) next() int {
 
 func (g *Generator) updateIndex() {
 
-	exist := make(map[SumSquares]bool)
+	exist := make(map[Square]bool)
 	for _, v := range g.index {
 		exist[v] = true
 	}
@@ -102,26 +103,16 @@ func (g *Generator) updateIndex() {
 		return g.index[i] < g.index[j]
 	})
 
-	return
 }
-
-/*
-func (g *Generator) generate(start SumSquares) {
-	g.set = Generate(g.set, start, start+g.bufferWindow)
-}
-*/
 
 func (g *Generator) deleteProcessed() {
 	if len(g.index) > g.id+1 {
 		log.Fatal("Partial clean-up not implemented")
 	}
 	g.set = make(IndexedTriplets)
-	//g.index = []SumSquares{}
-	return
 }
 
-func (g *Generator) generate(windowLow SumSquares) {
-	//TODO not single responsibility. Refactor to object Generator with internal state
+func (g *Generator) generate(windowLow Square) {
 	windowHigh := windowLow + g.bufferWindow
 	count := 0
 	start := int(math.Floor(math.Sqrt(float64(windowLow) / 3)))
@@ -130,17 +121,17 @@ func (g *Generator) generate(windowLow SumSquares) {
 	for i := start; i < stop; i++ {
 		//stop uncenessary cycles early
 		for j := 1; j < i; j++ {
-			if SumSquares(i*i+j*j) > windowHigh {
+			if Square(i*i+j*j) > windowHigh {
 				break
 			}
-			if !(SumSquares(i*i+2*j*j) < windowLow) {
+			if !(Square(i*i+2*j*j) < windowLow) {
 				for k := 0; k < j; k++ {
-					sum := SumSquares(i*i + j*j + k*k)
+					sum := Square(i*i + j*j + k*k)
 					if sum > windowHigh {
 						break
 					}
 					if sum >= windowLow {
-						g.set[sum] = append(g.set[sum], Triplet{SumSquares(i * i), SumSquares(j * j), SumSquares(k * k)})
+						g.set[sum] = append(g.set[sum], Triplet{Square(i * i), Square(j * j), Square(k * k)})
 						count++
 					}
 				}
@@ -150,7 +141,7 @@ func (g *Generator) generate(windowLow SumSquares) {
 
 }
 
-func (a *Triplet) HasOverlap2(b Triplet) bool {
+func (a *Triplet) HasOverlap(b Triplet) bool {
 	if a[0] == b[0] || a[0] == b[1] || a[0] == b[2] ||
 		a[1] == b[0] || a[1] == b[1] || a[1] == b[2] ||
 		a[2] == b[0] || a[2] == b[1] || a[2] == b[2] {
@@ -159,7 +150,7 @@ func (a *Triplet) HasOverlap2(b Triplet) bool {
 	return false
 }
 
-func FilterSubset(in []Triplet, searchType int) []Triplet {
+func FilterSubset(in []Triplet, searchType int) []Triplet { //TODO split to different filters. Make it a method, or ref to func
 	var minDiagonals int
 	switch searchType {
 	case SearchPureMagic:
@@ -172,7 +163,7 @@ func FilterSubset(in []Triplet, searchType int) []Triplet {
 	if len(in) < minDiagonals {
 		return []Triplet{}
 	}
-	keysStat := make(map[SumSquares]int)
+	keysStat := make(map[Square]int)
 	for _, t := range in {
 		keysStat[t[0]]++
 		keysStat[t[1]]++
@@ -215,7 +206,6 @@ func FilterSubset(in []Triplet, searchType int) []Triplet {
 		return in
 	}
 	return FilterSubset(filtered, searchType) //recursively apply filter until it doesn't change result
-
 }
 
 func (g *Generator) exclusiveLock() {

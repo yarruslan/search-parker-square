@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/yarruslan/search-parker-square/internal/matrix"
+	"github.com/yarruslan/search-parker-square/internal/square"
 	triplet "github.com/yarruslan/search-parker-square/internal/triplet"
 )
 
@@ -24,13 +24,13 @@ func Test_lookupSubset(t *testing.T) { //[97, 82, 74](21609) [94, 113, 2](21609)
 	tests := []struct {
 		name string
 		args args
-		want matrix.Matrix
+		want square.Matrix
 	}{
 		{"base",
 			args{
 				set1[21609],
 			},
-			matrix.Matrix{
+			square.Matrix{
 				triplet.Triplet{97 * 97, 82 * 82, 74 * 74}, triplet.Triplet{94 * 94, 113 * 113, 2 * 2}, triplet.Triplet{58 * 58, 46 * 46, 127 * 127},
 			},
 		},
@@ -38,7 +38,7 @@ func Test_lookupSubset(t *testing.T) { //[97, 82, 74](21609) [94, 113, 2](21609)
 			args{
 				setx16[21609*16],
 			},
-			matrix.Matrix{
+			square.Matrix{
 				triplet.Triplet{97 * 97 * 16, 82 * 82 * 16, 74 * 74 * 16}, triplet.Triplet{94 * 94 * 16, 113 * 113 * 16, 2 * 2 * 16}, triplet.Triplet{58 * 58 * 16, 46 * 46 * 16, 127 * 127 * 16},
 			},
 		},
@@ -46,16 +46,16 @@ func Test_lookupSubset(t *testing.T) { //[97, 82, 74](21609) [94, 113, 2](21609)
 			args{
 				setx225[21609*225],
 			},
-			matrix.Matrix{
+			square.Matrix{
 				triplet.Triplet{97 * 97 * 225, 82 * 82 * 225, 74 * 74 * 225}, triplet.Triplet{94 * 94 * 225, 113 * 113 * 225, 2 * 2 * 225}, triplet.Triplet{58 * 58 * 225, 46 * 46 * 225, 127 * 127 * 225},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var got matrix.Matrix
-			for _, sq := range matrix.LookupSubset(tt.args.set, triplet.SearchSemiMagic) {
-				if matrix.CountDiagonals(sq) > 0 { //TODO refactor, no single resp atm
+			var got square.Matrix
+			for _, sq := range square.CombineTripletsToMatrixes(tt.args.set, triplet.SearchSemiMagic) {
+				if sq.CountDiagonals() > 0 { //TODO refactor, no single resp atm
 					got = sq
 					break
 				}
@@ -69,15 +69,15 @@ func Test_lookupSubset(t *testing.T) { //[97, 82, 74](21609) [94, 113, 2](21609)
 
 func Test_findSquaresWithDiagonals(t *testing.T) {
 	type args struct {
-		start triplet.SumSquares
-		end   triplet.SumSquares
+		start triplet.Square
+		end   triplet.Square
 		d     int
 		res   chan []fmt.Stringer
 	}
 	tests := []struct {
 		name string
 		args args
-		want [][]matrix.Matrix
+		want [][]square.Matrix
 	}{
 		{"baser",
 			args{
@@ -86,7 +86,7 @@ func Test_findSquaresWithDiagonals(t *testing.T) {
 				1,
 				make(chan []fmt.Stringer),
 			},
-			[][]matrix.Matrix{
+			[][]square.Matrix{
 				{
 					{
 						triplet.Triplet{97 * 97, 82 * 82, 74 * 74},
@@ -109,7 +109,7 @@ func Test_findSquaresWithDiagonals(t *testing.T) {
 				1,
 				make(chan []fmt.Stringer),
 			},
-			[][]matrix.Matrix{
+			[][]square.Matrix{
 				{
 					{
 						triplet.Triplet{97 * 97, 82 * 82, 74 * 74},
@@ -138,7 +138,7 @@ func Test_findSquaresWithDiagonals(t *testing.T) {
 			},
 		},
 	}
-	progressStep := triplet.SumSquares(100000)
+	progressStep := triplet.Square(100000)
 	threads := 11
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -150,8 +150,8 @@ func Test_findSquaresWithDiagonals(t *testing.T) {
 				}
 				done <- struct{}{}
 			}()
-			g := new(matrix.Generator).Init(tt.args.start, tt.args.end, progressStep, threads)
-			g.FindSquaresWithDiagonals(tt.args.d, tt.args.res) //async race possible? more than 1 responce?
+			g := new(square.Generator).Init(new(triplet.Generator).Init(tt.args.start, tt.args.end, progressStep, threads), threads)
+			g.GenerateSquares(tt.args.d, tt.args.res) //async race possible? more than 1 responce?
 			//for got := range tt.args.res {
 			<-done
 			if len(tt.want) != len(got) {

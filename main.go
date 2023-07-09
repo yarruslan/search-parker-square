@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/yarruslan/search-parker-square/internal/matrix"
-	triplet "github.com/yarruslan/search-parker-square/internal/triplet"
+	"github.com/yarruslan/search-parker-square/internal/square"
+	"github.com/yarruslan/search-parker-square/internal/triplet"
 )
 
 //const memoryTarget int = 10000 //TODO target amount of triplets in memory, not window
@@ -15,20 +15,20 @@ func main() {
 	startSearch, endSearch, progressStep, threads, searchType := getParametersFromFlags()
 
 	//Start listener for results channel
-	resultChan := make(chan []fmt.Stringer)
+	result := make(chan []fmt.Stringer)
 	go func() {
-		for res := range resultChan {
-			for _, sq := range res {
+		for resultAsString := range result {
+			for _, sq := range resultAsString {
 				fmt.Println("Square ", sq, " has 1 diagonals")
 			}
 		}
 	}()
 
-	new(matrix.Generator).Init(startSearch, endSearch, progressStep, threads).FindSquaresWithDiagonals(searchType, resultChan)
+	new(square.Generator).Init(new(triplet.Generator).Init(startSearch, endSearch, progressStep, threads), threads).GenerateSquares(searchType, result)
 
 }
 
-func getParametersFromFlags() (start, end, progress triplet.SumSquares, threads int, searchType int) {
+func getParametersFromFlags() (start, end, progress triplet.Square, threads int, searchType int) {
 	fStart := flag.Int("start", 1, "Sum of squares in line to start search")
 	fEnd := flag.Int("end", 1000000, "Sum of squares in line to end search")
 	fProgress := flag.Int("progress", 100000, "Report progress at section of this size")
@@ -37,17 +37,17 @@ func getParametersFromFlags() (start, end, progress triplet.SumSquares, threads 
 	flag.Parse()
 
 	if fStart != nil {
-		start = triplet.SumSquares(*fStart)
+		start = triplet.Square(*fStart)
 	} else {
 		start = 0
 	}
 	if fEnd != nil {
-		end = triplet.SumSquares(*fEnd)
+		end = triplet.Square(*fEnd)
 	} else {
 		end = 1000000
 	}
 	if fProgress != nil {
-		progress = triplet.SumSquares(*fProgress)
+		progress = triplet.Square(*fProgress)
 	} else {
 		progress = 100000
 	}
