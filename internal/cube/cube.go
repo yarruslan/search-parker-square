@@ -13,8 +13,8 @@ type Generator struct {
 }
 
 type GraphNode struct {
-	self      *square.Matrix
-	connected []*square.Matrix
+	square      *square.Matrix
+	connections map[*GraphNode]struct{}
 }
 type Graph []GraphNode
 
@@ -58,19 +58,46 @@ func (g *Generator) GenerateCubes(searchType int, result chan []fmt.Stringer) {
 
 // Graph is based on squares. If 2 squares are intersecting they are connected
 func (g *Generator) buildGraphOfSquares(in []square.Matrix) *Graph {
-	//TODO implement
-	/*
-		loop at nodes
-			loop at added nodes to check it is not duplicate //duplicate = *square.Same(square2)
-			append to result
-			loop at added nodes and add bi-diretional connection on intersecting squares // connection = *square.Intersect(square2)
-				'same' and 'intersect' do "rotate"(?) and "revolve"*2 and "mirror" both squares, to check all variations
+	var graph Graph
+	for _, sq := range in {
+		exist := false
+		var newNode GraphNode
+		newNode.square = &sq
+		newNode.connections = make(map[*GraphNode]struct{})
+		for _, node := range graph {
+			if node.square.Same(&sq) {
+				exist = true
+				break
+			}
 		}
-	*/
-	return &Graph{}
+		if !exist {
+			graph = append(graph, newNode)
+
+			for _, node := range graph {
+				if node.square.Intersect(&sq) {
+					node.connect(&newNode)
+				}
+			}
+		}
+	}
+	return &graph
 }
 
 func (g *Graph) containsCube() bool {
+
+	strongNodes := 0
+	potentialNodes := 0
+	for _, node := range *g {
+		if len(node.connections) >= 3 {
+			strongNodes++
+		}
+		if len(node.connections) >= 2 {
+			potentialNodes++
+		}
+	}
+	if potentialNodes > 1 {
+		fmt.Println(len(*g), potentialNodes, strongNodes, (*g)[0].square.String()) //Further implementation make sense if strongly interconnected squares exist
+	}
 	//TODO implement
 	/*
 		candidate to cubes has connected graph of 9 connected squares, each of them has connection to 6 others
@@ -87,3 +114,15 @@ func (g *Graph) getCubes() []Cube {
 	//TODO implement
 	return []Cube{}
 }
+
+func (a *GraphNode) connect(b *GraphNode) {
+	a.connections[b] = struct{}{}
+	b.connections[a] = struct{}{}
+}
+
+/*
+func (a *GraphNode) disconnect(b *GraphNode) {
+	delete(a.connections, b)
+	delete(b.connections, a)
+}
+*/

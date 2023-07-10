@@ -23,7 +23,7 @@ func main() {
 	startSearch, endSearch, progressStep, threads, searchType := getParametersFromFlags()
 
 	//Start listener for results channel
-	result := make(chan []fmt.Stringer)
+	result := make(chan []fmt.Stringer) //TODO switch from []Stringer to Stringer
 	go func() {
 		for resultAsString := range result {
 			for _, sq := range resultAsString {

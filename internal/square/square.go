@@ -2,6 +2,8 @@ package square
 
 import (
 	"fmt"
+	"reflect"
+	"sort"
 	"sync"
 
 	triplet "github.com/yarruslan/search-parker-square/internal/triplet"
@@ -182,4 +184,42 @@ func filter(in []Matrix, searchType int) []Matrix {
 		out = filter(out, searchType) //repeat recursively
 	}
 	return out
+}
+
+// Returns true if one matrix can become another via by rearranging numbers
+func (a *Matrix) Same(b *Matrix) bool {
+	//lazy check - check 2 squares contain same set of numbers. Lasy is enough given that source is a magic square
+	setA := []int{int(a[0][0]), int(a[0][1]), int(a[0][2]), int(a[1][0]), int(a[1][1]), int(a[1][2]), int(a[2][0]), int(a[2][1]), int(a[2][2])}
+	setB := []int{int(b[0][0]), int(b[0][1]), int(b[0][2]), int(b[1][0]), int(b[1][1]), int(b[1][2]), int(b[2][0]), int(b[2][1]), int(b[2][2])}
+	sort.Ints(setA)
+	sort.Ints(setB)
+	return reflect.DeepEqual(setA, setB)
+}
+
+// 2 Squares intersect if they have matching triplet
+func (a *Matrix) Intersect(b *Matrix) bool {
+	tripletsA := []triplet.Triplet{a[0], a[1], a[2], a.column(0), a.column(1), a.column(2)}
+	tripletsB := []triplet.Triplet{b[0], b[1], b[2], b.column(0), b.column(1), b.column(2)}
+	for _, t1 := range tripletsA {
+		for _, t2 := range tripletsB {
+			if t1.Same(&t2) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (s *Matrix) rotate(up, right int) *Matrix {
+	//TODO
+	return &Matrix{}
+}
+
+func (s *Matrix) transpose() *Matrix {
+	//TODO
+	return &Matrix{}
+}
+
+func (s *Matrix) column(id int) triplet.Triplet {
+	return triplet.Triplet{s[id][0], s[id][1], s[id][2]}
 }

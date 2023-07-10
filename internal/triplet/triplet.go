@@ -233,3 +233,17 @@ func (g *Generator) releaseExclusiveLock() {
 func (g *Generator) GetSet() IndexedTriplets {
 	return g.set
 }
+
+// Returns true if 2 triplets share same numbers
+func (a *Triplet) Same(b *Triplet) bool {
+	//012 021 102 120 210 201
+	if (a[0] == b[0] && a[1] == b[1] && a[2] == b[2]) ||
+		(a[0] == b[0] && a[1] == b[2] && a[2] == b[1]) ||
+		(a[0] == b[1] && a[1] == b[0] && a[2] == b[2]) ||
+		(a[0] == b[1] && a[1] == b[2] && a[2] == b[0]) ||
+		(a[0] == b[2] && a[1] == b[1] && a[2] == b[0]) ||
+		(a[0] == b[2] && a[1] == b[0] && a[2] == b[1]) {
+		return true
+	}
+	return false
+}

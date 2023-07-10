@@ -181,10 +181,10 @@ func Test_main(t *testing.T) {
 		{name: "2 squares",
 			args: []string{"", "-end", "100000"},
 			want: `Square  [97 82 74][94 113 2][58 46 127](21609)  has 1 diagonals
-			Square  [97 94 58][82 113 46][74 2 127](21609)  has 1 diagonals
-			Square  [194 164 148][188 226 4][116 92 254](86436)  has 1 diagonals
-			Square  [194 188 116][164 226 92][148 4 254](86436)  has 1 diagonals
-			`},
+Square  [97 94 58][82 113 46][74 2 127](21609)  has 1 diagonals
+Square  [194 164 148][188 226 4][116 92 254](86436)  has 1 diagonals
+Square  [194 188 116][164 226 92][148 4 254](86436)  has 1 diagonals
+`},
 		{name: "no deadlocks at cube",
 			args: []string{"", "-mode", "cube", "-start", "1", "-end", "500000"},
 			want: ``},
