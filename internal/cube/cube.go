@@ -13,10 +13,10 @@ type Generator struct {
 }
 
 type GraphNode struct {
-	square      *square.Matrix
+	square      square.Matrix
 	connections map[*GraphNode]struct{}
 }
-type Graph []GraphNode
+type Graph []*GraphNode
 
 func (c *Cube) String() string {
 	return c[0].String() + c[1].String() + c[2].String()
@@ -62,22 +62,21 @@ func (g *Generator) buildGraphOfSquares(in []square.Matrix) *Graph {
 	for _, sq := range in {
 		exist := false
 		var newNode GraphNode
-		newNode.square = &sq
+		newNode.square = sq
 		newNode.connections = make(map[*GraphNode]struct{})
 		for _, node := range graph {
-			if node.square.Same(&sq) {
+			if node.square.Same(&newNode.square) {
 				exist = true
 				break
 			}
 		}
 		if !exist {
-			graph = append(graph, newNode)
-
 			for _, node := range graph {
 				if node.square.Intersect(&sq) {
 					node.connect(&newNode)
 				}
 			}
+			graph = append(graph, &newNode)
 		}
 	}
 	return &graph
@@ -85,18 +84,19 @@ func (g *Generator) buildGraphOfSquares(in []square.Matrix) *Graph {
 
 func (g *Graph) containsCube() bool {
 
-	strongNodes := 0
-	potentialNodes := 0
+	connectedNodes := 0
+	unfilteredNodes := len(*g)
 	for _, node := range *g {
-		if len(node.connections) >= 3 {
-			strongNodes++
-		}
-		if len(node.connections) >= 2 {
-			potentialNodes++
+		if len(node.connections) >= 6 { //each square shold connect to 6 other to form a cube
+			connectedNodes++
 		}
 	}
-	if potentialNodes > 1 {
-		fmt.Println(len(*g), potentialNodes, strongNodes, (*g)[0].square.String()) //Further implementation make sense if strongly interconnected squares exist
+	if connectedNodes >= 1 {
+		gf := g.filter()
+		filteredNodes := len(*gf)
+		//if filteredNodes >= 9 {
+		fmt.Println(unfilteredNodes, connectedNodes, filteredNodes, (*g)[0].square.String()) //Further implementation make sense if strongly interconnected squares exist
+		//}
 	}
 	//TODO implement
 	/*
@@ -120,9 +120,26 @@ func (a *GraphNode) connect(b *GraphNode) {
 	b.connections[a] = struct{}{}
 }
 
-/*
 func (a *GraphNode) disconnect(b *GraphNode) {
 	delete(a.connections, b)
 	delete(b.connections, a)
 }
-*/
+
+// filter out weakly connected nodes
+func (g *Graph) filter() *Graph {
+	var result Graph
+	for _, node := range *g {
+		if len(node.connections) >= 6 {
+			result = append(result, node)
+		} else {
+			for conn, _ := range node.connections {
+				node.disconnect(conn)
+			}
+		}
+	}
+	if len(*g) == len(result) {
+		return &result
+	}
+	return (&result).filter()
+
+}

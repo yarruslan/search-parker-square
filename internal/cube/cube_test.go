@@ -1,6 +1,12 @@
 package cube
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+
+	"github.com/yarruslan/search-parker-square/internal/square"
+	"github.com/yarruslan/search-parker-square/internal/triplet"
+)
 
 func TestCube_String(t *testing.T) {
 	tests := []struct {
@@ -29,3 +35,55 @@ func TestCube_String(t *testing.T) {
 }
 
 //TODO improve test coverage
+
+func TestGenerator_GenerateCubes(t *testing.T) {
+	type args struct {
+		searchType int
+		result     chan []fmt.Stringer
+	}
+	tests := []struct {
+		name string
+		g    *Generator
+		args args
+	}{
+
+		{
+			name: "test sum 1863225",
+			g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(1863225, 1863225, 1, 1), 1)),
+			args: args{
+				searchType: triplet.SearchCube,
+				result:     make(chan []fmt.Stringer), //nothing
+			},
+		},
+
+		{
+			name: "test sum 4060225",
+			g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(4060225, 4060225, 1, 1), 1)),
+			args: args{
+				searchType: triplet.SearchCube,
+				result:     make(chan []fmt.Stringer), // 2 connected
+			},
+		},
+
+		{
+			name: "test sum 1729225",
+			g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(1729225, 1729225, 1, 1), 1)),
+			args: args{
+				searchType: triplet.SearchCube,
+				result:     make(chan []fmt.Stringer), //nothing
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			go func() {
+				for resStr := range tt.args.result {
+					fmt.Println(resStr) //TODO make test for string got == want
+				}
+			}()
+
+			tt.g.GenerateCubes(tt.args.searchType, tt.args.result)
+
+		})
+	}
+}

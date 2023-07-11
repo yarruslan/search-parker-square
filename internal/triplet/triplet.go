@@ -24,7 +24,8 @@ type Generator struct {
 const SearchPureMagic int = 2
 const SearchSemiMagic int = 1
 const SearchNoMagic int = 0
-const SearchCube = 100
+const SearchCube int = 100
+const SearchCubeInSquares int = 101
 
 func (t *Triplet) getRoot() (ret [3]int) {
 	ret[0] = int(math.Sqrt(float64(t[0])))
@@ -161,12 +162,16 @@ func FilterSubset(in []Triplet, searchType int) []Triplet { //TODO split to diff
 		minTriplets = 7
 	case SearchNoMagic:
 		minTriplets = 6
-	case SearchCube:
+	case SearchCube, SearchCubeInSquares:
 		minTriplets = 27
 	}
 	if len(in) < minTriplets {
 		return []Triplet{}
 	}
+	if searchType == SearchCubeInSquares && !is_square(in[0][0]+in[0][1]+in[0][2]) { //Empirical: all solutions of intersecting no-magic squares are when summ of 3 items is square itself. don't know why
+		return []Triplet{}
+	}
+
 	keysStat := make(map[Square]int)
 	for _, t := range in {
 		keysStat[t[0]]++
@@ -190,7 +195,7 @@ func FilterSubset(in []Triplet, searchType int) []Triplet { //TODO split to diff
 	if (searchType == SearchPureMagic) && stat3 < 4 {
 		return []Triplet{}
 	}
-	if (searchType == SearchCube) && stat3 < 27 {
+	if (searchType == SearchCube || searchType == SearchCubeInSquares) && stat3 < 27 {
 		return []Triplet{}
 	}
 	if (searchType == SearchSemiMagic) && stat3 < 2 {
@@ -204,7 +209,7 @@ func FilterSubset(in []Triplet, searchType int) []Triplet { //TODO split to diff
 		switch searchType {
 		case SearchPureMagic, SearchSemiMagic, SearchNoMagic:
 			dimensions = 2 //heuristic shortcut: each number should be in at least 2 triplets to be part of the square
-		case SearchCube:
+		case SearchCube, SearchCubeInSquares:
 			dimensions = 3
 		}
 		if keysStat[t[0]] >= dimensions {
@@ -246,4 +251,9 @@ func (a *Triplet) Same(b *Triplet) bool {
 		return true
 	}
 	return false
+}
+
+func is_square(n Square) bool {
+	root := int(math.Sqrt(float64(n)))
+	return Square(root*root) == n
 }

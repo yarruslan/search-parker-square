@@ -164,7 +164,7 @@ func (g *Generator) GenerateSquares(searchType int, res chan []fmt.Stringer) { /
 func filter(in []Matrix, searchType int) []Matrix {
 	var out []Matrix
 	var diagonals int
-	if searchType == triplet.SearchCube && len(in) < 9 {
+	if (searchType == triplet.SearchCube || searchType == triplet.SearchCubeInSquares) && len(in) < 9 {
 		return []Matrix{}
 	}
 	switch searchType {
@@ -172,7 +172,7 @@ func filter(in []Matrix, searchType int) []Matrix {
 		diagonals = 2
 	case triplet.SearchSemiMagic:
 		diagonals = 1
-	case triplet.SearchNoMagic, triplet.SearchCube:
+	case triplet.SearchNoMagic, triplet.SearchCube, triplet.SearchCubeInSquares:
 		diagonals = 0
 	}
 	for _, sq := range in {
