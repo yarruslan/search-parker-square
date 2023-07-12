@@ -46,28 +46,71 @@ func TestGenerator_GenerateCubes(t *testing.T) {
 		g    *Generator
 		args args
 	}{
+		/*
+			{
+				name: "test sum 1863225",
+				g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(1863225, 1863225, 1, 1), 1)),
+				args: args{
+					searchType: triplet.SearchCube,
+					result:     make(chan []fmt.Stringer), //nothing
+				},
+			},
 
+			{
+				name: "test sum 4060225",
+				g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(4060225, 4060225, 1, 1), 1)),
+				args: args{
+					searchType: triplet.SearchCube,
+					result:     make(chan []fmt.Stringer), // 2 connected
+				},
+			},
+
+			{
+				name: "test sum 1729225",
+				g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(1729225, 1729225, 1, 1), 1)),
+				args: args{
+					searchType: triplet.SearchCube,
+					result:     make(chan []fmt.Stringer), //nothing
+				},
+			},
+		*/
+		/*
+			{
+				name: "test sum 30525625",
+				g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(30525625, 30525625, 1, 1), 1)),
+				args: args{
+					searchType: triplet.SearchCube,
+					result:     make(chan []fmt.Stringer), //nothing
+				},
+			},
+		*/
 		{
-			name: "test sum 1863225",
-			g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(1863225, 1863225, 1, 1), 1)),
+			name: "test sum 46580625",
+			g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(46580625, 46580625, 0, 1), 1)),
 			args: args{
 				searchType: triplet.SearchCube,
 				result:     make(chan []fmt.Stringer), //nothing
 			},
 		},
-
 		{
-			name: "test sum 4060225",
-			g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(4060225, 4060225, 1, 1), 1)),
+			name: "test sum 59830225",
+			g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(59830225, 59830225, 1, 1), 1)),
 			args: args{
 				searchType: triplet.SearchCube,
-				result:     make(chan []fmt.Stringer), // 2 connected
+				result:     make(chan []fmt.Stringer), //nothing
 			},
 		},
-
 		{
-			name: "test sum 1729225",
-			g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(1729225, 1729225, 1, 1), 1)),
+			name: "test sum 79655625",
+			g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(79655625, 79655625, 1, 1), 1)),
+			args: args{
+				searchType: triplet.SearchCube,
+				result:     make(chan []fmt.Stringer), //nothing
+			},
+		},
+		{
+			name: "test sum 88830625",
+			g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(88830625, 88830625, 1, 1), 1)),
 			args: args{
 				searchType: triplet.SearchCube,
 				result:     make(chan []fmt.Stringer), //nothing
