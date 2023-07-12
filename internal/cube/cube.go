@@ -30,7 +30,7 @@ func (g *Generator) Init(sq *square.Generator) *Generator {
 func (g *Generator) CombineSquaresToCubes(s []square.Matrix) []Cube {
 	var result []Cube
 
-	if graph := g.buildGraphOfSquares(s); graph.containsCube() {
+	if graph := g.buildGraphOfSquares(s).filter(); graph.canContainCube() {
 		result = append(result, graph.getCubes()...)
 	}
 
@@ -82,7 +82,7 @@ func (g *Generator) buildGraphOfSquares(in []square.Matrix) *Graph {
 	return &graph
 }
 
-func (g *Graph) containsCube() bool {
+func (g *Graph) canContainCube() bool { //TODO too many responsibilities in method
 
 	connectedNodes := 0
 	unfilteredNodes := len(*g)
@@ -93,6 +93,7 @@ func (g *Graph) containsCube() bool {
 	}
 	if connectedNodes >= 1 {
 		gf := g.filter()
+		g = gf //TODO, bug. it does not change input
 		filteredNodes := len(*gf)
 		//if filteredNodes >= 9 {
 		fmt.Println(unfilteredNodes, connectedNodes, filteredNodes, (*g)[0].square.String()) //Further implementation make sense if strongly interconnected squares exist
@@ -104,14 +105,48 @@ func (g *Graph) containsCube() bool {
 		so
 		1.find loosly connected, remove them.
 		2.rinse, repeat.
-		3.thoroughly check the 9-s+ connection graph
-		4.validate
+		//3.thoroughly check the 9-s+ connection graph //not here
+		//4.validate //not here
 	*/
+	if connectedNodes >= 9 { //TODO check based on filtered result
+		return true
+	}
 	return false
 }
 
 func (g *Graph) getCubes() []Cube {
 	//TODO implement
+	/*
+		graph contains at least 9 tightly connected squares
+		1. Pick a square as base
+		2. if 6 of its connected squares have another common intersection square - there is a cube
+		2.1 define 3rd square
+		3. Repeat at 1.
+	*/
+	for _, base := range *g {
+		//base := node.square
+		connectionsStats := make(map[*GraphNode]int)
+		for verticalPlane, _ := range base.connections {
+			for horisontalPlane, _ := range verticalPlane.connections {
+				connectionsStats[horisontalPlane]++
+			}
+		}
+		for k, v := range connectionsStats {
+			if k != base && v >= 6 {
+				//TODO thats a bit more compliacted
+				/*
+					sum := base.square[0][0] + base.square[0][1] + base.square[0][2]
+					top := square.Matrix{
+						{sum - base.square[0][0] - k.square[0][0], sum - base.square[0][1] - k.square[0][1], sum - base.square[0][2] - k.square[0][2]},
+						{sum - base.square[1][0] - k.square[1][0], sum - base.square[1][1] - k.square[1][1], sum - base.square[1][2] - k.square[1][2]},
+						{sum - base.square[2][0] - k.square[2][0], sum - base.square[2][1] - k.square[2][1], sum - base.square[2][2] - k.square[2][2]},
+					}
+				*/
+				fmt.Println("Found cube:", base.square, k.square, "[? ? ?]")
+			}
+		}
+	}
+
 	return []Cube{}
 }
 

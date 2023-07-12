@@ -16,9 +16,12 @@ type Generator struct {
 	index        []Square //sorted list of generated sums
 	id           int      // index[id] is the last returned sum
 	bufferWindow Square
+	showProgress Square //TODO split to 2 classes and interface
+	lastProgress Square //TODO split to 2 classes and interface
 	goal         Square
 	iterator     chan []Triplet
 	MapLock      chan struct{}
+	start        Square //TODO split to 2 classes and interface
 }
 
 const SearchPureMagic int = 2
@@ -46,6 +49,8 @@ func (g *Generator) Init(start, goal, window Square, readerThreads int) *Generat
 	g.MapLock = make(chan struct{}, readerThreads)
 	g.generate(start)
 	g.updateIndex()
+	g.start = start
+	g.showProgress = window
 	return g
 }
 
@@ -88,6 +93,35 @@ func (g *Generator) next() int {
 		log.Println("Generated next portion up to:", g.maxIndexed())
 	}
 	return g.id + 1
+}
+
+func (g *Generator) IterateSquares() chan []Triplet { //TODO split to 2 classes and interface
+	g.bufferWindow = 0
+	if g.iterator == nil {
+		g.iterator = make(chan []Triplet)
+		go func() {
+			defer close(g.iterator)
+			for g.id = int(math.Sqrt(float64((g.start)))); Square(g.id*g.id) <= g.goal; g.nextSquare() {
+				g.iterator <- g.set[Square(g.id*g.id)]
+			}
+		}()
+	}
+	return g.iterator
+}
+
+func (g *Generator) nextSquare() {
+
+	if Square(g.id*g.id) > g.lastProgress+g.showProgress {
+		log.Println("Processed sums up to: ", Square(g.id*g.id))
+		g.lastProgress = Square(g.id * g.id)
+	}
+	g.exclusiveLock()
+	//g.deleteProcessed()
+	g.id++
+	g.generate(Square(g.id * g.id)) //TODO almost single threaded. how to make it parallel?
+	g.releaseExclusiveLock()
+	//log.Println("Generated next portion up to:", g.maxIndexed())
+
 }
 
 func (g *Generator) updateIndex() {

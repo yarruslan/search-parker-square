@@ -152,7 +152,11 @@ func (g *Generator) GenerateSquares(searchType int, res chan []fmt.Stringer) { /
 
 	for i := 0; i < g.threads; i++ {
 		wg.Add(1)
-		go worker(g.tg.Iterate())
+		if !(searchType == triplet.SearchCubeInSquares) {
+			go worker(g.tg.Iterate())
+		} else {
+			go worker(g.tg.IterateSquares()) //TODO split to 2 classes and interface
+		}
 	}
 
 	defer func() {
