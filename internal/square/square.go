@@ -11,12 +11,16 @@ import (
 
 type Matrix [3]triplet.Triplet
 
-type Generator struct {
-	threads int
-	tg      *triplet.Generator
+type Iterator interface {
+	Iterate() chan []triplet.Triplet
 }
 
-func (g *Generator) Init(tg *triplet.Generator, threads int) *Generator {
+type Generator struct {
+	threads int
+	tg      Iterator
+}
+
+func (g *Generator) Init(tg Iterator, threads int) *Generator {
 	g.threads = threads
 	g.tg = tg
 	return g
@@ -137,9 +141,15 @@ func (g *Generator) GenerateSquares(searchType int, res chan []fmt.Stringer) { /
 		defer wg.Done()
 		for task := range tasklist {
 			var ret []fmt.Stringer
-			g.tg.MapLock <- struct{}{}
-			squares := CombineTripletsToMatrixes(task, searchType)
-			<-g.tg.MapLock
+			var squares []Matrix
+			switch gen := g.tg.(type) {
+			case *triplet.Generator:
+				gen.MapLock <- struct{}{}
+				squares = CombineTripletsToMatrixes(task, searchType)
+				<-gen.MapLock
+			case *triplet.SquareGenerator:
+				squares = CombineTripletsToMatrixes(task, searchType)
+			}
 			squares = filter(squares, searchType)
 			for _, sq := range squares {
 				ret = append(ret, sq)
@@ -155,7 +165,7 @@ func (g *Generator) GenerateSquares(searchType int, res chan []fmt.Stringer) { /
 		if !(searchType == triplet.SearchCubeInSquares) {
 			go worker(g.tg.Iterate())
 		} else {
-			go worker(g.tg.IterateSquares()) //TODO split to 2 classes and interface
+			go worker(g.tg.Iterate()) //TODO split to 2 classes and interface
 		}
 	}
 
@@ -225,5 +235,18 @@ func (s *Matrix) transpose() *Matrix {
 }
 
 func (s *Matrix) column(id int) triplet.Triplet {
+
 	return triplet.Triplet{s[id][0], s[id][1], s[id][2]}
+}
+
+func (s *Matrix) Contains(t triplet.Triplet) bool {
+	var c0, c1, c2 triplet.Triplet
+	c0 = s.column(0)
+	c1 = s.column(1)
+	c2 = s.column(2)
+	if t.Same(&s[0]) || t.Same(&s[1]) || t.Same(&s[2]) ||
+		t.Same(&c0) || t.Same(&c1) || t.Same(&c2) {
+		return true
+	}
+	return false
 }

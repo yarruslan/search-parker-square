@@ -2,6 +2,7 @@ package cube
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/yarruslan/search-parker-square/internal/square"
 )
@@ -85,37 +86,19 @@ func (g *Generator) buildGraphOfSquares(in []square.Matrix) *Graph {
 func (g *Graph) canContainCube() bool { //TODO too many responsibilities in method
 
 	connectedNodes := 0
-	unfilteredNodes := len(*g)
 	for _, node := range *g {
 		if len(node.connections) >= 6 { //each square shold connect to 6 other to form a cube
 			connectedNodes++
 		}
 	}
-	if connectedNodes >= 1 {
-		gf := g.filter()
-		g = gf //TODO, bug. it does not change input
-		filteredNodes := len(*gf)
-		//if filteredNodes >= 9 {
-		fmt.Println(unfilteredNodes, connectedNodes, filteredNodes, (*g)[0].square.String()) //Further implementation make sense if strongly interconnected squares exist
-		//}
-	}
-	//TODO implement
-	/*
-		candidate to cubes has connected graph of 9 connected squares, each of them has connection to 6 others
-		so
-		1.find loosly connected, remove them.
-		2.rinse, repeat.
-		//3.thoroughly check the 9-s+ connection graph //not here
-		//4.validate //not here
-	*/
-	if connectedNodes >= 9 { //TODO check based on filtered result
+	if connectedNodes >= 9 {
+		fmt.Println("Cube candidate", connectedNodes, (*g)[0].square.String())
 		return true
 	}
 	return false
 }
 
 func (g *Graph) getCubes() []Cube {
-	//TODO implement
 	/*
 		graph contains at least 9 tightly connected squares
 		1. Pick a square as base
@@ -131,18 +114,12 @@ func (g *Graph) getCubes() []Cube {
 				connectionsStats[horisontalPlane]++
 			}
 		}
-		for k, v := range connectionsStats {
-			if k != base && v >= 6 {
-				//TODO thats a bit more compliacted
-				/*
-					sum := base.square[0][0] + base.square[0][1] + base.square[0][2]
-					top := square.Matrix{
-						{sum - base.square[0][0] - k.square[0][0], sum - base.square[0][1] - k.square[0][1], sum - base.square[0][2] - k.square[0][2]},
-						{sum - base.square[1][0] - k.square[1][0], sum - base.square[1][1] - k.square[1][1], sum - base.square[1][2] - k.square[1][2]},
-						{sum - base.square[2][0] - k.square[2][0], sum - base.square[2][1] - k.square[2][1], sum - base.square[2][2] - k.square[2][2]},
-					}
-				*/
-				fmt.Println("Found cube:", base.square, k.square, "[? ? ?]")
+		for secondPlane, v := range connectionsStats {
+			if secondPlane != base && v >= 6 {
+				result := buildCubeBy2Planes(base.square, secondPlane.square, base.connections)
+				if (result != Cube{}) {
+					fmt.Println("!!!!!!!!! Found cube:", result, "!!!!!!!!!") //TODO move that to return
+				}
 			}
 		}
 	}
@@ -177,4 +154,47 @@ func (g *Graph) filter() *Graph {
 	}
 	return (&result).filter()
 
+}
+
+func buildCubeBy2Planes(base, secondLayer square.Matrix, verticalPlanes map[*GraphNode]struct{}) Cube {
+	//TODO should be exactly 1 cube
+	/*
+		take 1st row of base
+		find a plane containing it and intersecting second layer
+		take 2nd row of base
+		find a plane containing it, and intersecting second layer, and it should be parallel to previous vertical plane on second layer (maybe last is not necessary)
+		choose 3rd plane by 3rd row and remaining row in second layer
+		validate the 3 layers make proper cube.
+	*/
+	var firstPlane, secondPlane, thirdPlane square.Matrix
+	var result []Cube
+
+	for plane0, _ := range verticalPlanes {
+		if plane0.square.Contains(base[0]) && plane0.square.Intersect(&secondLayer) {
+			firstPlane = plane0.square
+			log.Println("Getting closer", firstPlane)
+			for plane1, _ := range verticalPlanes {
+				if plane1.square.Contains(base[1]) && plane1.square.Intersect(&secondLayer) { // && intersection uses different than first plane.
+					secondPlane = plane1.square
+					log.Println("Getting hot", firstPlane, secondPlane)
+					for plane2, _ := range verticalPlanes {
+						if plane2.square.Contains(base[2]) && plane2.square.Intersect(&secondLayer) {
+							thirdPlane = plane2.square
+							result = append(result, Cube{firstPlane, secondPlane, thirdPlane})
+						}
+					}
+				}
+			}
+		}
+	}
+	if len(result) > 1 {
+		log.Println("Unexpected")
+	}
+	if len(result) > 0 {
+		log.Println("Result", result)
+	}
+	if len(result) > 0 {
+		return result[0]
+	}
+	return Cube{}
 }

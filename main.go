@@ -34,10 +34,12 @@ func main() {
 	if searchType == triplet.SearchPureMagic || searchType == triplet.SearchSemiMagic || searchType == triplet.SearchNoMagic {
 		new(square.Generator).Init(new(triplet.Generator).Init(startSearch, endSearch, progressStep, threads), threads).GenerateSquares(searchType, result)
 	}
-	if searchType == triplet.SearchCube || searchType == triplet.SearchCubeInSquares {
+	if searchType == triplet.SearchCube {
 		new(cube.Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(startSearch, endSearch, progressStep, threads), threads)).GenerateCubes(searchType, result)
 	}
-
+	if searchType == triplet.SearchCubeInSquares {
+		new(cube.Generator).Init(new(square.Generator).Init(new(triplet.SquareGenerator).Init(startSearch, endSearch, progressStep), threads)).GenerateCubes(searchType, result)
+	}
 }
 
 func getParametersFromFlags() (start, end, progress triplet.Square, threads int, searchType int) {
@@ -46,7 +48,7 @@ func getParametersFromFlags() (start, end, progress triplet.Square, threads int,
 		fEnd = flag.Int("end", 1000000, "Sum of squares in line to end search")
 		fProgress = flag.Int("progress", 100000, "Report progress at section of this size")
 		fThreads = flag.Int("threads", 11, "Number of go-routines performing calculations in parallel")
-		fMode = flag.String("mode", "cube", "Type of search \"0diag\"|\"1diag\"|\"2diag\"|\"cube\"") //Int("Starging value", 1, "Sum of squares in line to start search")
+		fMode = flag.String("mode", "cube", "Type of search \"0diag\"|\"1diag\"|\"2diag\"|\"cube\"|\"cubeinsquares\"") //Int("Starging value", 1, "Sum of squares in line to start search")
 	}
 	flag.Parse()
 
