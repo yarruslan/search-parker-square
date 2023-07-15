@@ -11,6 +11,7 @@ import (
 type IndexedTriplets map[Square][]Triplet
 type Square int
 type Triplet [3]Square
+type Pair struct{ A, B Square }
 type Generator struct {
 	set          IndexedTriplets
 	index        []Square //sorted list of generated sums
@@ -127,7 +128,7 @@ func (g *SquareGenerator) nextSquare() {
 		log.Println("Processed sums up to: ", Square(g.id*g.id))
 		g.lastProgress = Square(g.id * g.id)
 	}
-	g.id++
+	g.id++ //TODO switch to even numbers only
 }
 
 func (g *Generator) updateIndex() {
@@ -188,6 +189,7 @@ func (g *SquareGenerator) generate(target Square) (result []Triplet) {
 	start := int(math.Floor(math.Sqrt(float64(target) / 3)))
 	stop := int(math.Ceil(math.Sqrt(float64(target))))
 	for i := start; i < stop; i++ {
+		//TODO calculate j boundaries, instead of checking conditions each iteration
 		for j := 1; j < i; j++ {
 			if Square(i*i+j*j) > target {
 				break
@@ -315,4 +317,14 @@ func (a *Triplet) Same(b *Triplet) bool {
 func is_square(n Square) bool {
 	root := int(math.Sqrt(float64(n)))
 	return Square(root*root) == n
+}
+
+func BuildPairIndex(in []Triplet) map[Pair]struct{} {
+	ret := make(map[Pair]struct{})
+	for _, t := range in {
+		ret[Pair{t[0], t[1]}] = struct{}{} //by design i>j>k, so in each pair 1st > 2nd
+		ret[Pair{t[0], t[2]}] = struct{}{}
+		ret[Pair{t[1], t[2]}] = struct{}{}
+	}
+	return ret
 }

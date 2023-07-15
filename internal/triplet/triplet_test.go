@@ -182,3 +182,41 @@ func TestTriplet_String(t *testing.T) {
 		})
 	}
 }
+
+func TestSquareGenerator_generate(t *testing.T) {
+	type args struct {
+		target Square
+	}
+	tests := []struct {
+		name       string
+		g          *SquareGenerator
+		args       args
+		wantResult int //[]Triplet
+	}{
+		{
+			name:       "mid 225450225",
+			g:          new(SquareGenerator).Init(0, 0, 1),
+			wantResult: 4755,
+			args: args{
+				225450225,
+			},
+		},
+		/*
+			{
+				name:       "giant 65155115025",
+				g:          new(SquareGenerator).Init(0, 0, 1),
+				wantResult: 80811,
+				args: args{
+					65155115025,
+				},
+			},
+		*/
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotResult := tt.g.generate(tt.args.target); !reflect.DeepEqual(len(gotResult), tt.wantResult) {
+				t.Errorf("SquareGenerator.generate() = %v, want %v", len(gotResult), tt.wantResult)
+			}
+		})
+	}
+}

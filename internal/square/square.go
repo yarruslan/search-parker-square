@@ -36,14 +36,23 @@ func CombineTripletsToMatrixes(set []triplet.Triplet, searchType int) []Matrix {
 	set = triplet.FilterSubset(set, searchType)
 	lenght := len(set)
 
+	pairIndex := triplet.BuildPairIndex(set)
+
 	var result []Matrix
+	//choose 3 non overlaping triplets, and check if they make a square.
 	for i := 0; i < lenght-2; i++ {
 		for j := i + 1; j < lenght-1; j++ {
 			if set[i].HasOverlap(set[j]) {
 				continue
 			}
+			if !couldBeInSameSquare(set[i], set[j], pairIndex) {
+				continue
+			}
 			for k := j + 1; k < lenght; k++ {
 				if set[i].HasOverlap(set[k]) || set[j].HasOverlap(set[k]) { //i-j checked before
+					continue
+				}
+				if !(couldBeInSameSquare(set[k], set[j], pairIndex) && couldBeInSameSquare(set[i], set[k], pairIndex)) {
 					continue
 				}
 				candidate := mustHave1column(Matrix{set[i], set[j], set[k]})
@@ -246,6 +255,38 @@ func (s *Matrix) Contains(t triplet.Triplet) bool {
 	c2 = s.column(2)
 	if t.Same(&s[0]) || t.Same(&s[1]) || t.Same(&s[2]) ||
 		t.Same(&c0) || t.Same(&c1) || t.Same(&c2) {
+		return true
+	}
+	return false
+}
+
+func couldBeInSameSquare(a, b triplet.Triplet, index map[triplet.Pair]struct{}) bool {
+	//Check each of a[0],a[1],a[2] have a pair with b.
+	return numberCouldBeInSquareWithTriplet(a[0], b, index) && numberCouldBeInSquareWithTriplet(a[1], b, index) && numberCouldBeInSquareWithTriplet(a[2], b, index)
+}
+
+func numberCouldBeInSquareWithTriplet(num triplet.Square, tr triplet.Triplet, index map[triplet.Pair]struct{}) bool { //TODO don't like the naming
+	//index pair is build with {bigger, smaller}
+	var pair0 triplet.Pair = triplet.Pair{num, tr[0]}
+	if pair0.A < pair0.B {
+		pair0.A, pair0.B = pair0.B, pair0.A
+	}
+	var pair1 triplet.Pair = triplet.Pair{num, tr[1]}
+	if pair1.A < pair1.B {
+		pair1.A, pair1.B = pair1.B, pair1.A
+	}
+	var pair2 triplet.Pair = triplet.Pair{num, tr[2]}
+	if pair2.A < pair2.B {
+		pair2.A, pair2.B = pair2.B, pair2.A
+	}
+	//1 pair is enough
+	if _, ok := index[pair0]; ok == true {
+		return true
+	}
+	if _, ok := index[pair1]; ok == true {
+		return true
+	}
+	if _, ok := index[pair2]; ok == true {
 		return true
 	}
 	return false

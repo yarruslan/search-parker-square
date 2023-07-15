@@ -46,15 +46,16 @@ func TestGenerator_GenerateCubes(t *testing.T) {
 		g    *Generator
 		args args
 	}{
-
-		{
-			name: "test sum 1863225",
-			g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(1863225, 1863225, 1, 1), 1)),
-			args: args{
-				searchType: triplet.SearchCube,
-				result:     make(chan []fmt.Stringer), //nothing
+		/*
+			{
+				name: "test sum 1863225",
+				g:    new(Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(1863225, 1863225, 1, 1), 1)),
+				args: args{
+					searchType: triplet.SearchCube,
+					result:     make(chan []fmt.Stringer), //nothing
+				},
 			},
-		},
+		*/
 		/*
 			{
 				name: "test sum 4060225",
@@ -84,15 +85,16 @@ func TestGenerator_GenerateCubes(t *testing.T) {
 				},
 			},
 		*/
-
-		{
-			name: "test sum 46580625",
-			g:    new(Generator).Init(new(square.Generator).Init(new(triplet.SquareGenerator).Init(46580625, 46580625, 10), 1)),
-			args: args{
-				searchType: triplet.SearchCube,
-				result:     make(chan []fmt.Stringer), //nothing
+		/*
+			{
+				name: "test sum 46580625",
+				g:    new(Generator).Init(new(square.Generator).Init(new(triplet.SquareGenerator).Init(46580625, 46580625, 10), 1)),
+				args: args{
+					searchType: triplet.SearchCube,
+					result:     make(chan []fmt.Stringer), //nothing
+				},
 			},
-		},
+		*/
 		/*
 			{
 				name: "test sum 59830225",
@@ -111,9 +113,19 @@ func TestGenerator_GenerateCubes(t *testing.T) {
 				},
 			},
 		*/
+		/*
+			{
+				name: "test sum 88830625",
+				g:    new(Generator).Init(new(square.Generator).Init(new(triplet.SquareGenerator).Init(88830625, 88830625, 10), 1)),
+				args: args{
+					searchType: triplet.SearchCube,
+					result:     make(chan []fmt.Stringer), //nothing
+				},
+			},
+		*/
 		{
-			name: "test sum 88830625",
-			g:    new(Generator).Init(new(square.Generator).Init(new(triplet.SquareGenerator).Init(88830625, 88830625, 10), 1)),
+			name: "test sum 65155115025",
+			g:    new(Generator).Init(new(square.Generator).Init(new(triplet.SquareGenerator).Init(65155115025, 65155115025, 10), 1)),
 			args: args{
 				searchType: triplet.SearchCube,
 				result:     make(chan []fmt.Stringer), //nothing

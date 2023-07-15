@@ -66,7 +66,7 @@ func (g *Generator) buildGraphOfSquares(in []square.Matrix) *Graph {
 		newNode.square = sq
 		newNode.connections = make(map[*GraphNode]struct{})
 		for _, node := range graph {
-			if node.square.Same(&newNode.square) {
+			if node.square.Same(&newNode.square) { //TODO n^2 is too long. Use index.
 				exist = true
 				break
 			}
@@ -86,7 +86,7 @@ func (g *Generator) buildGraphOfSquares(in []square.Matrix) *Graph {
 func (g *Graph) canContainCube() bool { //TODO too many responsibilities in method
 
 	connectedNodes := 0
-	for _, node := range *g {
+	for _, node := range *g { //TODO this is duplicated in filter
 		if len(node.connections) >= 6 { //each square shold connect to 6 other to form a cube
 			connectedNodes++
 		}
@@ -119,6 +119,7 @@ func (g *Graph) getCubes() []Cube {
 				result := buildCubeBy2Planes(base.square, secondPlane.square, base.connections)
 				if (result != Cube{}) {
 					fmt.Println("!!!!!!!!! Found cube:", result, "!!!!!!!!!") //TODO move that to return
+					log.Println("!!!!!!!!! Found cube:", result, "!!!!!!!!!")
 				}
 			}
 		}
@@ -173,10 +174,12 @@ func buildCubeBy2Planes(base, secondLayer square.Matrix, verticalPlanes map[*Gra
 		if plane0.square.Contains(base[0]) && plane0.square.Intersect(&secondLayer) {
 			firstPlane = plane0.square
 			log.Println("Getting closer", firstPlane)
+			fmt.Println("Getting closer", firstPlane)
 			for plane1, _ := range verticalPlanes {
 				if plane1.square.Contains(base[1]) && plane1.square.Intersect(&secondLayer) { // && intersection uses different than first plane.
 					secondPlane = plane1.square
 					log.Println("Getting hot", firstPlane, secondPlane)
+					fmt.Println("Getting hot", firstPlane, secondPlane)
 					for plane2, _ := range verticalPlanes {
 						if plane2.square.Contains(base[2]) && plane2.square.Intersect(&secondLayer) {
 							thirdPlane = plane2.square
@@ -189,9 +192,11 @@ func buildCubeBy2Planes(base, secondLayer square.Matrix, verticalPlanes map[*Gra
 	}
 	if len(result) > 1 {
 		log.Println("Unexpected")
+		fmt.Println("Unexpected")
 	}
 	if len(result) > 0 {
 		log.Println("Result", result)
+		fmt.Println("Result", result)
 	}
 	if len(result) > 0 {
 		return result[0]
