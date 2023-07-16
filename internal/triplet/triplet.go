@@ -56,14 +56,15 @@ func (g *Generator) Init(start, goal, window Square, readerThreads int) *Generat
 	g.MapLock = make(chan struct{}, readerThreads)
 	g.generate(start)
 	g.updateIndex()
-	//g.start = start
-	//g.showProgress = window
 	return g
 }
 
 func (g *SquareGenerator) Init(start, goal, progress Square) *SquareGenerator {
 	g.goal = goal
 	g.id = int(math.Sqrt(float64(start)))
+	if g.id%2 == 0 { //odd numbers only
+		g.id--
+	}
 	g.showProgress = progress
 	g.lastProgress = start
 	return g
@@ -128,7 +129,8 @@ func (g *SquareGenerator) nextSquare() {
 		log.Println("Processed sums up to: ", Square(g.id*g.id))
 		g.lastProgress = Square(g.id * g.id)
 	}
-	g.id++ //TODO switch to even numbers only
+	g.id += 2
+
 }
 
 func (g *Generator) updateIndex() {
@@ -189,16 +191,15 @@ func (g *SquareGenerator) generate(target Square) (result []Triplet) {
 	start := int(math.Floor(math.Sqrt(float64(target) / 3)))
 	stop := int(math.Ceil(math.Sqrt(float64(target))))
 	for i := start; i < stop; i++ {
-		//TODO calculate j boundaries, instead of checking conditions each iteration
-		for j := 1; j < i; j++ {
-			if Square(i*i+j*j) > target {
-				break
-			}
-			if !(Square(i*i+2*j*j) < target) {
-				k := int(math.Sqrt(float64(target - Square(i*i) - Square(j*j))))
-				if Square(i*i+j*j+k*k) == target {
-					result = append(result, Triplet{Square(i * i), Square(j * j), Square(k * k)})
-				}
+		//given that i>j>k, target = i*i+j*j+k*k
+		// i*i+j*j+j*j > target > i*i+j*j
+		// (target - i*i)/2 < j*j < target - i*i
+		jmin := int(math.Floor(math.Sqrt(float64(target-Square(i*i)) / 2)))
+		jmax := int(math.Ceil(math.Sqrt(float64(target - Square(i*i)))))
+		for j := jmin; j < jmax && j < i; j++ {
+			k := int(math.Sqrt(float64(target - Square(i*i) - Square(j*j))))
+			if k < j && Square(i*i+j*j+k*k) == target {
+				result = append(result, Triplet{Square(i * i), Square(j * j), Square(k * k)})
 			}
 		}
 	}
@@ -327,4 +328,11 @@ func BuildPairIndex(in []Triplet) map[Pair]struct{} {
 		ret[Pair{t[1], t[2]}] = struct{}{}
 	}
 	return ret
+}
+
+func (t Triplet) Sorted() Triplet {
+	intermediateInt := []int{int(t[0]), int(t[1]), int(t[2])}
+	sort.Ints(intermediateInt)
+	out := Triplet{Square(intermediateInt[0]), Square(intermediateInt[1]), Square(intermediateInt[2])}
+	return out
 }

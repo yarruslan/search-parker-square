@@ -2,7 +2,6 @@ package square
 
 import (
 	"fmt"
-	"reflect"
 	"sort"
 	"sync"
 
@@ -171,11 +170,7 @@ func (g *Generator) GenerateSquares(searchType int, res chan []fmt.Stringer) { /
 
 	for i := 0; i < g.threads; i++ {
 		wg.Add(1)
-		if !(searchType == triplet.SearchCubeInSquares) {
-			go worker(g.tg.Iterate())
-		} else {
-			go worker(g.tg.Iterate()) //TODO split to 2 classes and interface
-		}
+		go worker(g.tg.Iterate())
 	}
 
 	defer func() {
@@ -186,6 +181,7 @@ func (g *Generator) GenerateSquares(searchType int, res chan []fmt.Stringer) { /
 
 func filter(in []Matrix, searchType int) []Matrix {
 	var out []Matrix
+
 	var diagonals int
 	if (searchType == triplet.SearchCube || searchType == triplet.SearchCubeInSquares) && len(in) < 9 {
 		return []Matrix{}
@@ -198,10 +194,25 @@ func filter(in []Matrix, searchType int) []Matrix {
 	case triplet.SearchNoMagic, triplet.SearchCube, triplet.SearchCubeInSquares:
 		diagonals = 0
 	}
+	uniqueSquares := make(map[string]struct{})
 	for _, sq := range in {
-		if sq.CountDiagonals() >= diagonals {
+		if _, exist := uniqueSquares[sq.KeyAsString()]; !exist && sq.CountDiagonals() >= diagonals {
 			out = append(out, sq)
+			uniqueSquares[sq.KeyAsString()] = struct{}{}
 		}
+	}
+	var tripletUsageIndex = make(map[triplet.Triplet]int)
+	if searchType == triplet.SearchCube || searchType == triplet.SearchCubeInSquares {
+		var out2 []Matrix
+		for _, sq := range out {
+			addTripletsToIndex(sq, tripletUsageIndex)
+		}
+		for _, sq := range out {
+			if checkSatisfiesIndex(sq, tripletUsageIndex, searchType) {
+				out2 = append(out2, sq)
+			}
+		}
+		out = out2
 	}
 	if len(in) != len(out) {
 		out = filter(out, searchType) //repeat recursively
@@ -212,17 +223,13 @@ func filter(in []Matrix, searchType int) []Matrix {
 // Returns true if one matrix can become another via by rearranging numbers
 func (a *Matrix) Same(b *Matrix) bool {
 	//lazy check - check 2 squares contain same set of numbers. Lasy is enough given that source is a magic square
-	setA := []int{int(a[0][0]), int(a[0][1]), int(a[0][2]), int(a[1][0]), int(a[1][1]), int(a[1][2]), int(a[2][0]), int(a[2][1]), int(a[2][2])}
-	setB := []int{int(b[0][0]), int(b[0][1]), int(b[0][2]), int(b[1][0]), int(b[1][1]), int(b[1][2]), int(b[2][0]), int(b[2][1]), int(b[2][2])}
-	sort.Ints(setA)
-	sort.Ints(setB)
-	return reflect.DeepEqual(setA, setB)
+	return a.KeyAsString() == b.KeyAsString()
 }
 
 // 2 Squares intersect if they have matching triplet
 func (a *Matrix) Intersect(b *Matrix) bool {
-	tripletsA := []triplet.Triplet{a[0], a[1], a[2], a.column(0), a.column(1), a.column(2)}
-	tripletsB := []triplet.Triplet{b[0], b[1], b[2], b.column(0), b.column(1), b.column(2)}
+	tripletsA := []triplet.Triplet{a[0], a[1], a[2], a.Column(0), a.Column(1), a.Column(2)}
+	tripletsB := []triplet.Triplet{b[0], b[1], b[2], b.Column(0), b.Column(1), b.Column(2)}
 	for _, t1 := range tripletsA {
 		for _, t2 := range tripletsB {
 			if t1.Same(&t2) {
@@ -233,26 +240,29 @@ func (a *Matrix) Intersect(b *Matrix) bool {
 	return false
 }
 
-func (s *Matrix) rotate(up, right int) *Matrix {
-	//TODO
-	return &Matrix{}
+/*
+	func (s *Matrix) rotate(up, right int) *Matrix {
+		//TODO
+		return &Matrix{}
+	}
+*/
+func (s *Matrix) Transpose() Matrix {
+	out := *s
+	out[0][1], out[1][0] = out[1][0], out[0][1]
+	out[0][2], out[2][0] = out[2][0], out[0][2]
+	out[1][2], out[2][1] = out[2][1], out[1][2]
+	return out
 }
 
-func (s *Matrix) transpose() *Matrix {
-	//TODO
-	return &Matrix{}
-}
-
-func (s *Matrix) column(id int) triplet.Triplet {
-
+func (s *Matrix) Column(id int) triplet.Triplet {
 	return triplet.Triplet{s[id][0], s[id][1], s[id][2]}
 }
 
 func (s *Matrix) Contains(t triplet.Triplet) bool {
 	var c0, c1, c2 triplet.Triplet
-	c0 = s.column(0)
-	c1 = s.column(1)
-	c2 = s.column(2)
+	c0 = s.Column(0)
+	c1 = s.Column(1)
+	c2 = s.Column(2)
 	if t.Same(&s[0]) || t.Same(&s[1]) || t.Same(&s[2]) ||
 		t.Same(&c0) || t.Same(&c1) || t.Same(&c2) {
 		return true
@@ -288,6 +298,51 @@ func numberCouldBeInSquareWithTriplet(num triplet.Square, tr triplet.Triplet, in
 	}
 	if _, ok := index[pair2]; ok == true {
 		return true
+	}
+	return false
+}
+
+func (s *Matrix) KeyAsString() string {
+	numbers := []int{int(s[0][0]), int(s[0][1]), int(s[0][2]), int(s[1][0]), int(s[1][1]), int(s[1][2]), int(s[2][0]), int(s[2][1]), int(s[2][2])}
+	sort.Ints(numbers)
+	return fmt.Sprint(numbers)
+}
+
+func addTripletsToIndex(sq Matrix, index map[triplet.Triplet]int) {
+	index[sq[0].Sorted()]++
+	index[sq[1].Sorted()]++
+	index[sq[2].Sorted()]++
+
+	index[sq.Column(0).Sorted()]++
+	index[sq.Column(1).Sorted()]++
+	index[sq.Column(2).Sorted()]++
+}
+
+func checkSatisfiesIndex(sq Matrix, index map[triplet.Triplet]int, searchType int) bool {
+	if searchType == triplet.SearchCubeInSquares || searchType == triplet.SearchCube {
+		//each row and column is belong to at least 2 squares
+		nrOfIndexed := 0
+		if index[sq[0].Sorted()] >= 2 {
+			nrOfIndexed++
+		}
+		if index[sq[1].Sorted()] >= 2 {
+			nrOfIndexed++
+		}
+		if index[sq[2].Sorted()] >= 2 {
+			nrOfIndexed++
+		}
+		if index[sq.Column(0).Sorted()] >= 2 {
+			nrOfIndexed++
+		}
+		if index[sq.Column(1).Sorted()] >= 2 {
+			nrOfIndexed++
+		}
+		if index[sq.Column(2).Sorted()] >= 2 {
+			nrOfIndexed++
+		}
+		if nrOfIndexed == 6 {
+			return true
+		}
 	}
 	return false
 }

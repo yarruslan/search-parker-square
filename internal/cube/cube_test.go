@@ -123,6 +123,7 @@ func TestGenerator_GenerateCubes(t *testing.T) {
 				},
 			},
 		*/
+
 		{
 			name: "test sum 65155115025",
 			g:    new(Generator).Init(new(square.Generator).Init(new(triplet.SquareGenerator).Init(65155115025, 65155115025, 10), 1)),
@@ -131,6 +132,17 @@ func TestGenerator_GenerateCubes(t *testing.T) {
 				result:     make(chan []fmt.Stringer), //nothing
 			},
 		},
+
+		/*
+			{
+				name: "test sum 117831025",
+				g:    new(Generator).Init(new(square.Generator).Init(new(triplet.SquareGenerator).Init(117831025, 117831025, 10), 1)),
+				args: args{
+					searchType: triplet.SearchCube,
+					result:     make(chan []fmt.Stringer), //nothing
+				},
+			},
+		*/
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -142,6 +154,50 @@ func TestGenerator_GenerateCubes(t *testing.T) {
 
 			tt.g.GenerateCubes(tt.args.searchType, tt.args.result)
 
+		})
+	}
+}
+
+func TestGenerator2_GenerateCubes(t *testing.T) {
+	type args struct {
+		searchType int
+		result     chan []fmt.Stringer
+	}
+	tests := []struct {
+		name string
+		g    *Generator2
+		args args
+	}{
+
+		{
+			name: "test sum 65155115025",
+			g:    new(Generator2).Init(new(square.Generator).Init(new(triplet.SquareGenerator).Init(65155115025, 65155115025, 10), 1)),
+			args: args{
+				searchType: triplet.SearchCube,
+				result:     make(chan []fmt.Stringer), //nothing
+			},
+		},
+		/*
+			{
+				name: "test sum 117831025",
+				g:    new(Generator2).Init(new(square.Generator).Init(new(triplet.SquareGenerator).Init(117831025, 117831025, 10), 1)),
+				args: args{
+					searchType: triplet.SearchCube,
+					result:     make(chan []fmt.Stringer), //nothing
+				},
+			},
+		*/
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		go func() {
+			for resStr := range tt.args.result {
+				fmt.Println(resStr) //TODO make test for string got == want
+			}
+		}()
+
+		t.Run(tt.name, func(t *testing.T) {
+			tt.g.GenerateCubes(tt.args.searchType, tt.args.result)
 		})
 	}
 }

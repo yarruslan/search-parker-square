@@ -194,23 +194,31 @@ func TestSquareGenerator_generate(t *testing.T) {
 		wantResult int //[]Triplet
 	}{
 		{
+			name:       "min sq 21609",
+			g:          new(SquareGenerator).Init(0, 0, 1),
+			wantResult: 40,
+			args: args{
+				21609,
+			},
+		},
+
+		{
 			name:       "mid 225450225",
 			g:          new(SquareGenerator).Init(0, 0, 1),
-			wantResult: 4755,
+			wantResult: 4749,
 			args: args{
 				225450225,
 			},
 		},
-		/*
-			{
-				name:       "giant 65155115025",
-				g:          new(SquareGenerator).Init(0, 0, 1),
-				wantResult: 80811,
-				args: args{
-					65155115025,
-				},
+
+		{
+			name:       "giant 65155115025",
+			g:          new(SquareGenerator).Init(0, 0, 1),
+			wantResult: 80790,
+			args: args{
+				65155115025,
 			},
-		*/
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -38,7 +38,7 @@ func main() {
 		new(cube.Generator).Init(new(square.Generator).Init(new(triplet.Generator).Init(startSearch, endSearch, progressStep, threads), threads)).GenerateCubes(searchType, result)
 	}
 	if searchType == triplet.SearchCubeInSquares {
-		new(cube.Generator).Init(new(square.Generator).Init(new(triplet.SquareGenerator).Init(startSearch, endSearch, progressStep), threads)).GenerateCubes(searchType, result)
+		new(cube.Generator2).Init(new(square.Generator).Init(new(triplet.SquareGenerator).Init(startSearch, endSearch, progressStep), threads)).GenerateCubes(searchType, result)
 	}
 }
 
