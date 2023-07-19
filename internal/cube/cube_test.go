@@ -168,15 +168,24 @@ func TestGenerator2_GenerateCubes(t *testing.T) {
 		g    *Generator2
 		args args
 	}{
-
+		/*
+			{
+				name: "test sum 65155115025",
+				g:    new(Generator2).Init(new(square.Generator).Init(new(triplet.SquareGenerator).Init(65155115025, 65155115025, 10), 1)),
+				args: args{
+					searchType: triplet.SearchCube,
+					result:     make(chan []fmt.Stringer), //nothing
+				},
+			},*/
 		{
-			name: "test sum 65155115025",
-			g:    new(Generator2).Init(new(square.Generator).Init(new(triplet.SquareGenerator).Init(65155115025, 65155115025, 10), 1)),
+			name: "test sum 1026882025",
+			g:    new(Generator2).Init(new(square.Generator).Init(new(triplet.SquareGenerator).Init(1026882025, 1026882025, 10), 1)),
 			args: args{
 				searchType: triplet.SearchCube,
 				result:     make(chan []fmt.Stringer), //nothing
 			},
 		},
+
 		/*
 			{
 				name: "test sum 117831025",

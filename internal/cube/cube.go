@@ -111,7 +111,10 @@ func (g *Generator2) CombineSquaresToCubes(in []square.Matrix) []Cube {
 
 		for node1, _ := range secondConnectionNodes {
 			plane1 := node1.square
-			if plane0.Same(&plane1) || !(fitToIndex(plane0, plane1, index) || fitToIndex(plane0, plane1.Transpose(), index)) {
+			if plane0.Touch(plane1) {
+				continue
+			}
+			if !(fitToIndex(plane0, plane1, index) || fitToIndex(plane0, plane1.Transpose(), index)) {
 				continue
 			}
 			if fitToIndex(plane0, plane1.Transpose(), index) {
@@ -132,7 +135,10 @@ func (g *Generator2) CombineSquaresToCubes(in []square.Matrix) []Cube {
 			fmt.Println("2 planes matched:", plane0, plane1)
 			for node2, _ := range secondConnectionNodes {
 				plane2 := node2.square
-				if plane0.Same(&plane2) || plane1.Same(&plane2) || !(fitToIndex(plane0, plane2, index) || fitToIndex(plane0, plane2.Transpose(), index)) || !(fitToIndex(plane1, plane2, index) || fitToIndex(plane1, plane2.Transpose(), index)) {
+				if plane0.Touch(plane2) || plane1.Touch(plane2) {
+					continue
+				}
+				if !(fitToIndex(plane0, plane2, index) || fitToIndex(plane0, plane2.Transpose(), index)) || !(fitToIndex(plane1, plane2, index) || fitToIndex(plane1, plane2.Transpose(), index)) {
 					continue
 				}
 				if fitToIndex(plane0, plane2.Transpose(), index) {

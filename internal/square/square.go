@@ -346,3 +346,18 @@ func checkSatisfiesIndex(sq Matrix, index map[triplet.Triplet]int, searchType in
 	}
 	return false
 }
+
+// 2 square touch if they share a number
+func (a *Matrix) Touch(b Matrix) bool {
+	setA := []int{int(a[0][0]), int(a[0][1]), int(a[0][2]), int(a[1][0]), int(a[1][1]), int(a[1][2]), int(a[2][0]), int(a[2][1]), int(a[2][2])}
+	setB := []int{int(b[0][0]), int(b[0][1]), int(b[0][2]), int(b[1][0]), int(b[1][1]), int(b[1][2]), int(b[2][0]), int(b[2][1]), int(b[2][2])}
+
+	for numA := range setA {
+		for numB := range setB {
+			if numA == numB {
+				return true
+			}
+		}
+	}
+	return false
+}
