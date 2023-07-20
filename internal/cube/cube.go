@@ -49,7 +49,7 @@ func (g *Generator) CombineSquaresToCubes(s []square.Matrix) []Cube {
 }
 
 func (g *Generator) GenerateCubes(searchType int, result chan []fmt.Stringer) {
-	sqChan := make(chan []fmt.Stringer)
+	sqChan := make(chan []fmt.Stringer, 10)
 
 	go g.sq.GenerateSquares(searchType, sqChan)
 

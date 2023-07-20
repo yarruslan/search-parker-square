@@ -87,7 +87,7 @@ func (g *Generator) maxIndexed() Square {
 
 func (g *Generator) Iterate() chan []Triplet {
 	if g.iterator == nil {
-		g.iterator = make(chan []Triplet)
+		g.iterator = make(chan []Triplet, 10)
 		go func() {
 			defer close(g.iterator)
 			for ; g.index[g.id] <= g.goal; g.id = g.next() {
@@ -113,7 +113,7 @@ func (g *Generator) next() int {
 
 func (g *SquareGenerator) Iterate() chan []Triplet {
 	if g.iterator == nil {
-		g.iterator = make(chan []Triplet)
+		g.iterator = make(chan []Triplet, 10)
 		go func() {
 			defer close(g.iterator)
 			for ; Square(g.id*g.id) <= g.goal; g.nextSquare() {
